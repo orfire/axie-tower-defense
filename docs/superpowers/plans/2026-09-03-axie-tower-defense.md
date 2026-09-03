@@ -78,7 +78,17 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
 - Consomme : rien.
 - Produit : un projet Vite qui démarre, `npm test` qui passe, et `public/spine/`, `public/vfx/`, `public/sfx/` remplis et sous 15 Mo au total.
 
-**Pourquoi la conversion en WebP :** les PNG bruts du toolkit pèsent 35 Mo pour les squelettes et 39 Mo pour les 21 atlas d'effets dont on a besoin. C'est intenable au premier chargement sur mobile. La conversion en WebP divise le poids par sept environ sans toucher aux coordonnées des atlas, à condition de réécrire la première ligne du fichier `.atlas` qui nomme l'image.
+**Pourquoi ce pipeline.** Les sources brutes pèsent plus de 80 Mo pour ce dont on a besoin. Trois traitements les ramènent à environ 20 Mo, chacun pour une raison différente :
+
+| Traitement | Poids avant | Poids après | Pourquoi |
+|---|---|---|---|
+| PNG → WebP | 35 Mo squelettes + 39 Mo effets | 6,2 + 3,5 Mo | Les images dominent. La conversion ne touche pas aux coordonnées des atlas, à condition de réécrire la ligne du `.atlas` qui nomme l'image. |
+| JSON des squelettes minifié | 12,2 Mo | 9,2 Mo | Le kit livre du JSON indenté. Minifier est gratuit et sans risque, ce n'est que de l'espacement. |
+| WAV → MP3 | 7,1 Mo | ~0,4 Mo | Des effets courts en PCM non compressé. Le MP3 est lu par tous les navigateurs cibles, contrairement à l'OGG sur Safari. |
+
+**Le total sur disque n'est pas ce que le joueur télécharge.** Le serveur compresse à la volée, et le JSON de squelette passe de 9,2 Mo à 1,1 Mo sur le réseau. Surtout, les assets sont chargés **par niveau** : une partie a besoin d'environ 11 squelettes sur 39 et 10 atlas sur 23, soit à peu près 4 Mo au premier écran de jeu. Le plafond de 25 Mo ci-dessous est donc une règle d'hygiène du dépôt, pas une mesure de l'expérience joueur.
+
+**Prérequis : `ffmpeg` doit être installé** et accessible dans le `PATH` pour la conversion audio. Il n'est nécessaire que sur la machine de développement, jamais au déploiement, puisque `public/` est versionné.
 
 - [ ] **Étape 1 : Créer `package.json`**
 
@@ -103,6 +113,7 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
     "pixi.js": "7.2.4"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "sharp": "^0.34.0",
     "typescript": "~5.9.2",
     "vite": "^6.3.5",
@@ -197,6 +208,7 @@ Pas de `.gitignore` à créer ici : celui de la racine du dépôt couvre déjà 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import sharp from 'sharp'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -262,7 +274,9 @@ for (const { src, out } of spineDirs) {
   if (!pngName || !existsSync(join(src, pngName))) throw new Error(`Image introuvable pour ${src} (${pngName})`)
 
   mkdirSync(out, { recursive: true })
-  copyFileSync(join(src, jsonName), join(out, 'skeleton.json'))
+  // JSON minifié : le kit livre de l'indenté, ça n'enlève que de l'espacement.
+  const skeleton = JSON.parse(readFileSync(join(src, jsonName), 'utf8'))
+  writeFileSync(join(out, 'skeleton.json'), JSON.stringify(skeleton))
   writeFileSync(join(out, 'skeleton.atlas'), atlasText.replace(pngName, 'skeleton.webp'))
   await webp(join(src, pngName), join(out, 'skeleton.webp'))
   bytes += size(join(out, 'skeleton.json')) + size(join(out, 'skeleton.atlas')) + size(join(out, 'skeleton.webp'))
@@ -278,20 +292,40 @@ for (const id of vfxNeeded) {
   bytes += size(join(out, 'atlas.webp')) + size(join(out, 'clip.json'))
 }
 
+// Audio : des effets courts, en PCM non compressé dans le kit. Le MP3 mono à 96 kb/s
+// suffit et se lit partout, y compris sur Safari qui gère mal l'OGG.
+try {
+  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' })
+} catch {
+  throw new Error("ffmpeg est introuvable dans le PATH. Il est nécessaire pour convertir les effets sonores.")
+}
+
 mkdirSync(join(PUB, 'sfx'), { recursive: true })
 for (const id of sfxNeeded) {
-  copyFileSync(join(WEBVFX, 'sfx', `${id}.wav`), join(PUB, 'sfx', `${id}.wav`))
-  bytes += size(join(PUB, 'sfx', `${id}.wav`))
+  const out = join(PUB, 'sfx', `${id}.mp3`)
+  execFileSync('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', join(WEBVFX, 'sfx', `${id}.wav`),
+    '-ac', '1', '-ar', '44100', '-b:a', '96k', out,
+  ])
+  bytes += size(out)
 }
 
 writeFileSync(join(PUB, 'assets-manifest.json'), JSON.stringify({
   spine: spineDirs.length, vfx: vfxNeeded, sfx: sfxNeeded, bytes,
 }, null, 2))
 
-const mb = (bytes / 1024 / 1024).toFixed(1)
-console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length} · total ${mb} Mo`)
-if (bytes > 15 * 1024 * 1024) {
-  console.error(`Budget d'assets dépassé : ${mb} Mo > 15 Mo`)
+// Détail par catégorie : une régression de poids doit se voir tout de suite.
+const mb = (n) => (n / 1024 / 1024).toFixed(2)
+const sum = (pattern) => spineDirs.reduce((s, d) => s + size(join(d.out, pattern)), 0)
+console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length}`)
+console.log(`  squelettes JSON ${mb(sum('skeleton.json'))} Mo · images ${mb(sum('skeleton.webp'))} Mo`)
+console.log(`  total ${mb(bytes)} Mo`)
+
+// Plafond d'hygiène du dépôt. Ce n'est pas ce que le joueur télécharge :
+// le serveur compresse, et les assets sont chargés par niveau.
+if (bytes > 25 * 1024 * 1024) {
+  console.error(`Budget d'assets dépassé : ${mb(bytes)} Mo > 25 Mo`)
   process.exit(1)
 }
 ```
@@ -304,7 +338,7 @@ Les messages d'erreur nomment le dossier fautif. Si l'un d'eux se déclenche, li
 cd axie-td && npm install && npm run data && npm run assets
 ```
 
-Attendu : une ligne du type `Spine 39 · VFX 21 · SFX 20 · total 11.4 Mo`, sans erreur. Si le total dépasse 15 Mo, baisser `quality` à 80 dans `webp()` et relancer.
+Attendu : trois lignes de rapport, un total autour de 20 Mo, aucune erreur. Les compteurs exacts dépendent de ce que `vfx-map.json` référence : rapporter les vrais chiffres. Si le total dépasse 25 Mo, baisser `quality` à 80 dans `webp()` et relancer.
 
 - [ ] **Étape 7 : Écrire le test de fumée `tests/assets.test.ts`**
 
@@ -317,8 +351,20 @@ const PUB = join(process.cwd(), 'public')
 const manifest = JSON.parse(readFileSync(join(PUB, 'assets-manifest.json'), 'utf8'))
 
 describe('assets', () => {
-  it('reste sous le budget de 15 Mo', () => {
-    expect(manifest.bytes).toBeLessThan(15 * 1024 * 1024)
+  it('reste sous le plafond de 25 Mo du dépôt', () => {
+    expect(manifest.bytes).toBeLessThan(25 * 1024 * 1024)
+  })
+
+  it('minifie le JSON des squelettes', () => {
+    const raw = readFileSync(join(PUB, 'spine', 'axies', 'buba', 'skeleton.json'), 'utf8')
+    expect(raw.includes('\n')).toBe(false)
+  })
+
+  it('convertit les effets sonores en MP3', () => {
+    expect(manifest.sfx.length).toBeGreaterThan(0)
+    for (const id of manifest.sfx) {
+      expect(existsSync(join(PUB, 'sfx', `${id}.mp3`)), id).toBe(true)
+    }
   })
 
   it('fournit les trois fichiers Spine de Buba', () => {
@@ -3929,7 +3975,7 @@ export class Sfx {
     if (Array.isArray(id)) { id.forEach((i) => this.play(i)); return }
     let base = cache.get(id)
     if (!base) {
-      base = new Audio(`/sfx/${id}.wav`)
+      base = new Audio(`/sfx/${id}.mp3`)
       base.preload = 'auto'
       cache.set(id, base)
     }
