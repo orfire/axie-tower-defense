@@ -18,10 +18,9 @@ function nearPlain(w: ReturnType<typeof createWorld>, cell: readonly [number, nu
 }
 
 /**
- * Un appel de fonction séparé pour lire `w.phase` : lu en ligne, une boucle
- * imbriquée dans une autre déjà gardée par `w.phase === 'placement'` hérite à
- * tort de ce rétrécissement littéral aux yeux de TypeScript, alors que
- * `startWave` a changé la phase entre-temps (TS2367).
+ * TypeScript garde le type littéral `'placement'` de `w.phase` à travers l'appel
+ * à `startWave`, et signale alors une comparaison impossible (TS2367). Passer par
+ * une fonction casse cette déduction, sans rien changer au comportement.
  */
 function isWave(w: ReturnType<typeof createWorld>): boolean {
   return w.phase === 'wave'
@@ -42,14 +41,12 @@ describe('vague', () => {
     // avec le dépassement quand il y a attaque. Un test de bout en bout passerait
     // au travers d'une erreur de rythme : on la mesure ici, directement.
     const w = createWorld(1)
-    // [3, 3] coïncide avec l'index 7 du chemin du niveau 1 (le chemin y repasse) :
-    // Momo (distance) ne peut pas s'y poser. [2, 2] est en plaine, à portée de
-    // l'ennemi immobile en d = 3 (case [1, 1] du chemin).
+    // [3, 3] est l'index 7 du chemin au niveau 1 : Momo, classe à distance, ne peut
+    // pas s'y poser. [2, 2] est en plaine et à portée de l'ennemi immobile en d = 3.
     const momo = place(w, 'momo', [2, 2])!
     startWave(w)
-    // slime : assez de PV pour encaisser la volée sans mourir, et 0 % d'armure —
-    // le treant a 40 % d'armure, ce que la formule de « hits » ci-dessous ne
-    // modélise pas (elle ne fait que le triangle de classes).
+    // slime : 0 % d'armure. Le treant en a 40 %, que la formule de comptage
+    // ci-dessous ne modélise pas, puisqu'elle ne fait que le triangle de classes.
     const e = makeEnemy(w, 'slime')
     e.d = 3
     w.enemies.push(e)
@@ -102,19 +99,68 @@ describe('déterminisme', () => {
     expect(run()).toEqual(run())
   })
 
+  it('avance un ennemi d’exactement sa vitesse en une seconde', () => {
+    // Le test précédent ne peut PAS détecter un réordonnancement de step :
+    // rejouer du code déterministe donne le même résultat quel que soit l'ordre
+    // interne. Celui-ci le peut. step incrémente le temps, fait apparaître, puis
+    // déplace, donc un slime à vitesse 1 a parcouru exactement 1 case au bout de
+    // 30 ticks. Si l'apparition passait après le déplacement, il aurait un tick
+    // de retard et vaudrait 29/30.
+    const w = createWorld(1)
+    startWave(w)
+    for (let i = 0; i < Math.round(1 / DT); i++) step(w)
+    expect(w.enemies[0].d).toBeCloseTo(1, 6)
+  })
+
+  it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
+    // Sensible à l'ordre entre moveEnemies, qui pose blockedBy, et enemyActions,
+    // qui le consomme dans le même tick. Un slime bloqué inflige 4 dégâts par
+    // seconde à Olek, sans modificateur : Plante contre Plante est neutre.
+    const w = createWorld(1)
+    const olek = place(w, 'olek', w.level.path[6])!
+    startWave(w)
+    // On laisse le premier slime venir se coller au bloqueur, mais pas plus :
+    // attendre un temps fixe (8 s) laisse Olek entamer sa cible avant même le
+    // début de la mesure, et elle meurt en cours de fenêtre (40 PV, 0 % d'armure,
+    // ~9,6 dps d'Olek — morte vers 8,7 s), ce qui troue la seconde mesurée.
+    let waited = 0
+    while (waited < Math.round(20 / DT) && w.phase === 'wave' && !w.enemies.some((e) => e.blockedBy === olek.uid)) {
+      step(w)
+      waited++
+    }
+    const blocked = w.enemies.find((e) => e.blockedBy === olek.uid)
+    expect(blocked, 'aucun ennemi bloqué après 20 s').toBeDefined()
+
+    const before = olek.hp
+    for (let i = 0; i < Math.round(1 / DT); i++) step(w)
+    expect(before - olek.hp).toBeCloseTo(4, 4)
+  })
+
   it('n’utilise ni aléa ni horloge dans src/sim', () => {
-    const dir = join(process.cwd(), 'src', 'sim')
-    for (const f of readdirSync(dir)) {
-      const src = readFileSync(join(dir, f), 'utf8')
-      expect(src, f).not.toMatch(/Math\.random|Date\.now|performance\.now|new Date\(/)
+    for (const [name, src] of simSources()) {
+      expect(src, name).not.toMatch(/Math\.random|Date\.now|performance\.now|new Date\(/)
     }
   })
 
   it('n’importe rien du rendu dans src/sim', () => {
-    const dir = join(process.cwd(), 'src', 'sim')
-    for (const f of readdirSync(dir)) {
-      const src = readFileSync(join(dir, f), 'utf8')
-      expect(src, f).not.toMatch(/from '(pixi|\.\.\/render|\.\.\/ui)/)
+    for (const [name, src] of simSources()) {
+      // Guillemets simples ou doubles, import statique ou dynamique.
+      expect(src, name).not.toMatch(/(?:from|import\s*\()\s*['"](?:pixi|\.\.\/render|\.\.\/ui)/)
     }
   })
 })
+
+/** Tous les fichiers TypeScript de src/sim, sous-dossiers compris. */
+function simSources(): [string, string][] {
+  const out: [string, string][] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (entry.name.endsWith('.ts')) out.push([full, readFileSync(full, 'utf8')])
+    }
+  }
+  walk(join(process.cwd(), 'src', 'sim'))
+  if (out.length === 0) throw new Error('Aucun fichier trouvé dans src/sim')
+  return out
+}
