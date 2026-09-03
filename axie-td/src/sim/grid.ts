@@ -19,16 +19,6 @@ export function isOrthAdjacent(a: Cell, b: Cell): boolean {
   return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1
 }
 
-export function orthNeighbors(cell: Cell, cols: number, rows: number): Cell[] {
-  const out: Cell[] = []
-  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-    const c = cell[0] + dc
-    const r = cell[1] + dr
-    if (c >= 0 && c < cols && r >= 0 && r < rows) out.push([c, r])
-  }
-  return out
-}
-
 const key = (cell: Cell) => `${cell[0]},${cell[1]}`
 
 /** Vue immuable d'un niveau : type de chaque case et géométrie du chemin. */
@@ -45,7 +35,10 @@ export class Board {
     for (const h of level.hills) this.hills.add(key(h))
   }
 
-  /** `null` si la case est hors grille. */
+  /**
+   * `null` si la case est hors grille. Le chemin gagne sur la colline en cas de
+   * chevauchement, mais tools/gen-data.mjs refuse déjà ce cas à la génération.
+   */
   kindAt(cell: Cell): CellKind | null {
     const [c, r] = cell
     if (c < 0 || c >= this.cols || r < 0 || r >= this.rows) return null

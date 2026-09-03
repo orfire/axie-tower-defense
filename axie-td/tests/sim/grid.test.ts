@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Board, center, dist, isOrthAdjacent, orthNeighbors } from '../../src/sim/grid'
+import { Board, center, dist, isOrthAdjacent, sameCell } from '../../src/sim/grid'
 import { levelDef } from '../../src/data/load'
 
 describe('géométrie', () => {
@@ -13,12 +13,23 @@ describe('géométrie', () => {
     expect(dist(center([0, 0]), center([3, 4]))).toBe(5)
   })
 
-  it('ne compte que les 4 voisins orthogonaux', () => {
-    expect(orthNeighbors([3, 3], 7, 10)).toHaveLength(4)
-    expect(orthNeighbors([0, 0], 7, 10)).toHaveLength(2)
-    expect(isOrthAdjacent([3, 3], [3, 4])).toBe(true)
-    expect(isOrthAdjacent([3, 3], [4, 4])).toBe(false)
+  it('ne reconnaît que l\'adjacence orthogonale', () => {
+    // Les 4 voisins, dans les 4 directions.
+    for (const n of [[3, 2], [3, 4], [2, 3], [4, 3]] as const) {
+      expect(isOrthAdjacent([3, 3], n), String(n)).toBe(true)
+    }
+    // Les 4 diagonales : jamais. C'est la règle qui tient tout le système d'auras.
+    for (const d of [[2, 2], [4, 4], [2, 4], [4, 2]] as const) {
+      expect(isOrthAdjacent([3, 3], d), String(d)).toBe(false)
+    }
+    // Une case n'est pas sa propre voisine, et rien au-delà d'un pas.
     expect(isOrthAdjacent([3, 3], [3, 3])).toBe(false)
+    expect(isOrthAdjacent([3, 3], [3, 5])).toBe(false)
+  })
+
+  it('compare deux cases', () => {
+    expect(sameCell([3, 4], [3, 4])).toBe(true)
+    expect(sameCell([3, 4], [4, 3])).toBe(false)
   })
 })
 
