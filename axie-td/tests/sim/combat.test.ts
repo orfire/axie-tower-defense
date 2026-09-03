@@ -28,6 +28,35 @@ describe('armure', () => {
     damageEnemy(w, treant, 100, { from: null, ignoresArmor: true })
     expect(treant.hp).toBeCloseTo(200)
   })
+
+  it('compose Écailles puis Fragile comme le chiffre du GDD', () => {
+    // GDD §7.3 : un treant à 40 %, voisin d'un Reptile et Fragile, tombe à 12,5 %.
+    // L'ordre inverse donnerait 5 %. Ce test verrouille l'ordre, pas seulement le résultat.
+    const w = createWorld(5)
+    const treant = makeEnemy(w, 'treant')
+    treant.d = 3
+    w.enemies.push(treant)
+    expect(effectiveArmor(treant, w)).toBeCloseTo(0.4, 5)
+
+    // Un Reptile sur une case voisine de celle qu'occupe le treant.
+    const [c, r] = w.board.cellAt(treant.d)
+    const neighbour: [number, number] = c + 1 < 7 ? [c + 1, r] : [c - 1, r]
+    placeTestAxie(w, 'venoki', neighbour)
+    expect(effectiveArmor(treant, w)).toBeCloseTo(0.25, 5) // 0,40 − 0,15
+
+    treant.statuses.push({ id: 'fragile', remaining: 5, tickMult: 1, dps: 0 })
+    expect(effectiveArmor(treant, w)).toBeCloseTo(0.125, 5) // puis divisé par deux
+  })
+
+  it('ne descend jamais sous zéro', () => {
+    const w = createWorld(1)
+    const slime = makeEnemy(w, 'slime') // aucune armure
+    slime.d = 3
+    w.enemies.push(slime)
+    const [c, r] = w.board.cellAt(slime.d)
+    placeTestAxie(w, 'venoki', c + 1 < 7 ? [c + 1, r] : [c - 1, r])
+    expect(effectiveArmor(slime, w)).toBe(0)
+  })
 })
 
 describe('ciblage', () => {
@@ -64,6 +93,18 @@ describe('ciblage', () => {
     const t = pickTarget(w, momo)
     expect(t!.uid).toBe(marked.uid)
   })
+
+  it('départage deux cibles identiques par le plus petit uid', () => {
+    // Sans ce départage, le vainqueur dépendrait de l'ordre du tableau
+    // et deux parties identiques divergeraient.
+    const w = createWorld(1)
+    const momo = placeTestAxie(w, 'momo', [3, 3])
+    startWave(w)
+    const a = makeEnemy(w, 'slime'); a.d = 3
+    const b = makeEnemy(w, 'slime'); b.d = 3
+    w.enemies.push(b, a) // volontairement dans le désordre
+    expect(pickTarget(w, momo)!.uid).toBe(Math.min(a.uid, b.uid))
+  })
 })
 
 describe('mort et KO', () => {
@@ -74,6 +115,7 @@ describe('mort et KO', () => {
     const died = damageEnemy(w, e, 999, { from: null })
     expect(died).toBe(true)
     expect(e.alive).toBe(false)
+    expect(e.hp).toBe(0) // jamais négatif à l'affichage
     expect(w.events.some((ev) => ev.k === 'death' && ev.uid === e.uid)).toBe(true)
   })
 

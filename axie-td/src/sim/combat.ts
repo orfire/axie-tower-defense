@@ -11,12 +11,18 @@ export function triangleMult(attacker: ClassId, target: ClassId): number {
   return 1
 }
 
-/** Armure de l'ennemi après Fragile et après l'aura Écailles des Reptiles voisins. */
+/**
+ * Armure de l'ennemi après l'aura Écailles des Reptiles voisins, puis Fragile.
+ *
+ * L'ordre est imposé par l'exemple chiffré du GDD §7.3 : un treant à 40 %,
+ * voisin d'un Reptile et Fragile, tombe à 12,5 %. Écailles retire 15 points
+ * bruts, Fragile divise ensuite par deux ce qu'il reste. L'ordre inverse
+ * donnerait 5 %, soit un combo Reptile + Fragile bien plus fort que prévu.
+ */
 export function effectiveArmor(e: EnemyUnit, w: World): number {
   let armor = e.def.armor
-  if (e.statuses.some((s) => s.id === 'fragile')) {
-    armor *= BALANCE.statuses.fragile.value ?? 0.5
-  }
+
+  // Écailles d'abord : retrait de points d'armure bruts.
   const cell = w.board.cellAt(e.d)
   for (const a of w.axies) {
     if (a.ko || a.cls !== 'reptile' || a.kind === 'hill') continue
@@ -25,6 +31,12 @@ export function effectiveArmor(e: EnemyUnit, w: World): number {
       break
     }
   }
+
+  // Fragile ensuite : moitié de ce qu'il reste.
+  if (e.statuses.some((s) => s.id === 'fragile')) {
+    armor *= BALANCE.statuses.fragile.value ?? 0.5
+  }
+
   return Math.min(1, Math.max(0, armor))
 }
 
