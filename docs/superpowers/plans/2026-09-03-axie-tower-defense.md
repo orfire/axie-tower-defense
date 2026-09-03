@@ -2003,6 +2003,21 @@ describe('auras', () => {
     placeTestAxie(w, 'dps-bird', [2, 3])
     recomputeAuras(w)
     expect(puffy.eff.range).toBeCloseTo(puffy.baseRange + 1) // +1, pas +2
+    // Une seule source Oiseau retenue, pas deux.
+    expect(auraSources(w, puffy).filter((s) => s.cls === 'bird')).toHaveLength(1)
+  })
+
+  it('départage deux voisins de même classe par le plus petit uid', () => {
+    // La valeur d'une aura ne dépend pas de son porteur, donc eff serait identique
+    // dans les deux cas : seul auraSources révèle qui a été retenu. Sans départage
+    // stable, le liseré affiché changerait d'un chargement à l'autre.
+    const w = createWorld(1)
+    const puffy = placeTestAxie(w, 'puffy', [3, 3])
+    const first = placeTestAxie(w, 'momo', [3, 4])
+    const second = placeTestAxie(w, 'dps-bird', [2, 3])
+    expect(second.uid).toBeGreaterThan(first.uid)
+    recomputeAuras(w)
+    expect(auraSources(w, puffy).find((s) => s.cls === 'bird')!.uid).toBe(first.uid)
   })
 
   it('cumule deux auras de classes différentes', () => {
@@ -2066,21 +2081,22 @@ Attendu : ÉCHEC sur l'import de `../../src/sim/auras`.
 - [ ] **Étape 3 : Écrire `src/sim/auras.ts`**
 
 ```ts
-import { BALANCE, axieDef } from '../data/load'
+import { BALANCE } from '../data/load'
 import type { ClassId } from '../data/types'
 import { isOrthAdjacent } from './grid'
 import type { AxieUnit } from './types'
 import type { World } from './world'
 
-/** Force d'un Axie comme source d'aura : somme de ses bonus de parts. */
-function auraStrength(a: AxieUnit): number {
-  const b = axieDef(a.axieId).bonuses
-  return b.hp + b.damage + b.rate
-}
-
 /**
- * Voisins qui donnent effectivement une aura : un seul par classe, le plus fort.
+ * Voisins qui donnent effectivement une aura : un seul par classe.
  * Un Axie sur colline ne reçoit rien et ne donne rien.
+ *
+ * Le GDD §5.3 parle de retenir « la plus forte » des auras d'une même classe.
+ * En v1 cette formulation n'a pas d'effet : la valeur d'une aura est fixée par la
+ * classe, pas par l'Axie qui la porte, donc deux voisins de même classe donnent
+ * exactement le même bonus. Le départage sert uniquement au déterminisme, et il se
+ * fait sur le plus petit uid. Le jour où une aura variera selon le porteur, c'est
+ * ici qu'il faudra comparer la statistique concernée.
  */
 export function auraSources(w: World, a: AxieUnit): AxieUnit[] {
   if (a.ko || a.kind === 'hill') return []
@@ -2089,10 +2105,7 @@ export function auraSources(w: World, a: AxieUnit): AxieUnit[] {
     if (other.uid === a.uid || other.ko || other.kind === 'hill') continue
     if (!isOrthAdjacent(a.cell, other.cell)) continue
     const cur = best.get(other.cls)
-    if (!cur) { best.set(other.cls, other); continue }
-    const sc = auraStrength(cur)
-    const so = auraStrength(other)
-    if (so > sc || (so === sc && other.uid < cur.uid)) best.set(other.cls, other)
+    if (!cur || other.uid < cur.uid) best.set(other.cls, other)
   }
   return [...best.values()].sort((x, y) => x.uid - y.uid)
 }
@@ -2118,9 +2131,17 @@ export function recomputeAuras(w: World): void {
         case 'beast': eff.fury = BALANCE.auras.fury.value ?? 1.3; break
         case 'aquatic': eff.tide = true; break
         case 'bug': eff.swarm = BALANCE.auras.swarm.value ?? 2; break
-        // Plante (Racines) et Reptile (Écailles) visent les ennemis :
-        // traitées dans refreshRoots et effectiveArmor.
-        default: break
+        case 'plant':
+        case 'reptile':
+          // Racines et Écailles visent les ennemis : traitées dans refreshRoots
+          // et effectiveArmor, jamais ici.
+          break
+        default: {
+          // Une septième classe ajoutée sans aura échouerait à la compilation
+          // plutôt que de ne rien faire en silence.
+          const unhandled: never = src.cls
+          throw new Error(`Classe sans aura déclarée : ${String(unhandled)}`)
+        }
       }
     }
 
@@ -2141,7 +2162,7 @@ export function recomputeAuras(w: World): void {
 cd axie-td && npx vitest run tests/sim/auras.test.ts
 ```
 
-Attendu : 8 tests passent. Si la case voisine de la colline tombe hors grille pour le niveau 3, remplacer `[hill[0], hill[1] - 1]` par `[hill[0] + 1, hill[1]]`.
+Attendu : 9 tests passent, soit 58 avec les 49 des tâches précédentes. Si la case voisine de la colline tombe hors grille pour le niveau 3, remplacer `[hill[0], hill[1] - 1]` par `[hill[0] + 1, hill[1]]`.
 
 - [ ] **Étape 5 : Commiter**
 
