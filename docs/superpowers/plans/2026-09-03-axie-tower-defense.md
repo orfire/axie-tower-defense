@@ -1785,8 +1785,10 @@ describe('statuts', () => {
 
   it('pose Racines quand une Plante est voisine et le retire sinon', () => {
     const w = createWorld(1)
+    // path[3] vaut [1,1] au niveau 1, et son voisin de droite [2,1] est path[2],
+    // donc sur le chemin. On prend le voisin de gauche, en plaine.
     const cell = w.level.path[3]
-    const olek = placeTestAxie(w, 'olek', [cell[0] + 1, cell[1]])
+    const olek = placeTestAxie(w, 'olek', [cell[0] - 1, cell[1]])
     startWave(w)
     const e = makeEnemy(w, 'slime'); e.d = 3; w.enemies.push(e)
     refreshRoots(w)
@@ -1815,7 +1817,7 @@ describe('statuts', () => {
 })
 ```
 
-Si le test des Racines échoue parce que `[cell[0] + 1, cell[1]]` tombe sur le chemin ou hors grille, prendre `[cell[0] - 1, cell[1]]`. La case exacte n'a pas d'importance, seule compte l'adjacence orthogonale.
+La case exacte n'a pas d'importance, seule compte l'adjacence orthogonale au chemin.
 
 - [ ] **Étape 2 : Lancer le test pour vérifier qu'il échoue**
 
