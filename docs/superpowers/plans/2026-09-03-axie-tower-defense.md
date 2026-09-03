@@ -3149,22 +3149,64 @@ describe('déterminisme', () => {
     expect(run()).toEqual(run())
   })
 
+  it('avance un ennemi d’exactement sa vitesse en une seconde', () => {
+    // Le test précédent ne peut PAS détecter un réordonnancement de step :
+    // rejouer du code déterministe donne le même résultat quel que soit l'ordre
+    // interne. Celui-ci le peut. step incrémente le temps, fait apparaître, puis
+    // déplace, donc un slime à vitesse 1 a parcouru exactement 1 case au bout de
+    // 30 ticks. Si l'apparition passait après le déplacement, il aurait un tick
+    // de retard et vaudrait 29/30.
+    const w = createWorld(1)
+    startWave(w)
+    for (let i = 0; i < Math.round(1 / DT); i++) step(w)
+    expect(w.enemies[0].d).toBeCloseTo(1, 6)
+  })
+
+  it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
+    // Sensible à l'ordre entre moveEnemies, qui pose blockedBy, et enemyActions,
+    // qui le consomme dans le même tick. Un slime bloqué inflige 4 dégâts par
+    // seconde à Olek, sans modificateur : Plante contre Plante est neutre.
+    const w = createWorld(1)
+    const olek = place(w, 'olek', w.level.path[6])!
+    startWave(w)
+    // On laisse le premier slime venir se coller au bloqueur.
+    for (let i = 0; i < Math.round(8 / DT) && w.phase === 'wave'; i++) step(w)
+    const blocked = w.enemies.find((e) => e.blockedBy === olek.uid)
+    expect(blocked, 'aucun ennemi bloqué après 8 s').toBeDefined()
+
+    const before = olek.hp
+    for (let i = 0; i < Math.round(1 / DT); i++) step(w)
+    expect(before - olek.hp).toBeCloseTo(4, 4)
+  })
+
   it('n’utilise ni aléa ni horloge dans src/sim', () => {
-    const dir = join(process.cwd(), 'src', 'sim')
-    for (const f of readdirSync(dir)) {
-      const src = readFileSync(join(dir, f), 'utf8')
-      expect(src, f).not.toMatch(/Math\.random|Date\.now|performance\.now|new Date\(/)
+    for (const [name, src] of simSources()) {
+      expect(src, name).not.toMatch(/Math\.random|Date\.now|performance\.now|new Date\(/)
     }
   })
 
   it('n’importe rien du rendu dans src/sim', () => {
-    const dir = join(process.cwd(), 'src', 'sim')
-    for (const f of readdirSync(dir)) {
-      const src = readFileSync(join(dir, f), 'utf8')
-      expect(src, f).not.toMatch(/from '(pixi|\.\.\/render|\.\.\/ui)/)
+    for (const [name, src] of simSources()) {
+      // Guillemets simples ou doubles, import statique ou dynamique.
+      expect(src, name).not.toMatch(/(?:from|import\s*\()\s*['"](?:pixi|\.\.\/render|\.\.\/ui)/)
     }
   })
 })
+
+/** Tous les fichiers TypeScript de src/sim, sous-dossiers compris. */
+function simSources(): [string, string][] {
+  const out: [string, string][] = []
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (entry.name.endsWith('.ts')) out.push([full, readFileSync(full, 'utf8')])
+    }
+  }
+  walk(join(process.cwd(), 'src', 'sim'))
+  if (out.length === 0) throw new Error('Aucun fichier trouvé dans src/sim')
+  return out
+}
 ```
 
 - [ ] **Étape 5 : Lancer les deux fichiers de test**
@@ -3173,7 +3215,7 @@ describe('déterminisme', () => {
 cd axie-td && npx vitest run tests/sim/placement.test.ts tests/sim/game.test.ts
 ```
 
-Attendu : 16 tests passent, soit 93 avec les 77 des tâches précédentes.
+Attendu : 18 tests passent, soit 95 avec les 77 des tâches précédentes.
 
 Si « gagne le niveau 1 » échoue, la formation de référence est trop faible. Renforcer en ajoutant `place(w, 'puffy', ...)` sur une case voisine libre, et reporter la même formation dans `tools/balance-run.mjs` à la tâche 21. Si à l'inverse « perd le niveau » échoue parce que le joueur survit sans rien poser, le niveau 1 est trop facile : le signaler dans le rapport de tâche, c'est une décision d'équilibrage pour Edouard, pas une correction à faire seul.
 
