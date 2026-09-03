@@ -482,8 +482,37 @@ export interface EnemyDef {
   line_breaker?: boolean
 }
 
+export interface AuraDef {
+  class: ClassId
+  target: 'allies' | 'enemies'
+  effect: string
+  value?: number
+  status?: StatusId
+  hp_threshold?: number
+}
+
+export interface StatusDef {
+  duration: number | null | 'wave'
+  effect: string
+  value?: number
+  dps?: number
+  ignores_armor?: boolean
+  max_stacks?: number
+  refresh_on_reapply?: boolean
+  applied_when?: string
+  gain_on?: string
+  /** Atlas d'effet du kit, consommé par le rendu. */
+  vfx?: string
+  /** Icône de statut affichée sur l'ennemi. */
+  icon?: string
+  /** Commentaire de design, jamais lu par le code. */
+  note?: string
+}
+
 export interface Balance {
   version: string
+  /** Provenance : quelle version du GDD a produit ce fichier. */
+  gdd: string
   sim: { tick_hz: number; no_randomness: boolean }
   grid: { cols: number; rows: number }
   level: {
@@ -491,24 +520,29 @@ export interface Balance {
     leak_damage: Record<Tier, number>
     stars_by_lives: Record<string, number>
   }
+  /** Toujours `orthogonal` en v1 : les diagonales ne portent jamais d'aura. */
+  adjacency: string
   triangle: { advantage: number; disadvantage: number; beats: Record<ClassId, ClassId[]> }
+  targeting: { default: string; priority_status: StatusId }
   cells: {
     path: { allowed_lines: Line[]; blocks: boolean }
     plain: { allowed_lines: Line[] }
     hill: { allowed_lines: Line[]; range_penalty: number; auras: boolean; max_per_level: number; hit_only_by: string[] }
   }
   classes: Record<ClassId, ClassDef>
-  auras: Record<AuraId, { class: ClassId; target: 'allies' | 'enemies'; effect: string; value?: number; status?: StatusId; hp_threshold?: number }> & { anti_stack: string }
-  statuses: Record<StatusId | 'blocked' | 'rage', {
-    duration: number | null | 'wave'
-    effect: string
-    value?: number
-    dps?: number
-    ignores_armor?: boolean
-    max_stacks?: number
-  }>
+  auras: Record<AuraId, AuraDef> & { anti_stack: string }
+  statuses: Record<StatusId | 'blocked' | 'rage', StatusDef>
   reactions: Record<ReactionId, Record<string, unknown>>
   parts_bonus: Record<ClassId, { hp?: number; damage?: number; rate?: number }>
+  /** Règles de dérivation du profil depuis les parts. Utilisé par gen-data.mjs. */
+  profile_rules: {
+    min_dominant: number
+    tie_margin: number
+    labels: Record<string, string>
+  }
+  ko: { removed_until: string; returns: string }
+  /** Règles de comportement des chimères, en toutes lettres. Documentation exécutable. */
+  enemy_rules: Record<string, string | boolean>
   enemies: Record<string, EnemyDef>
 }
 
@@ -521,6 +555,8 @@ export interface AxieDef {
   bonuses: { hp: number; damage: number; rate: number }
   profile: string | null
   unlock: { type: 'start' | 'stars' | 'v2'; stars?: number }
+  /** Commentaire de design, jamais lu par le code. */
+  note?: string
 }
 
 export interface SpawnDef { t: number; enemy: string }
@@ -634,6 +670,24 @@ describe('données', () => {
       }
     }
   })
+
+  it('déclare toutes les clés du fichier d’équilibrage', () => {
+    // Une clé présente dans balance.json mais absente de l'interface est invisible
+    // pour les 19 tâches suivantes : le compilateur refuserait du code pourtant juste.
+    const declared = [
+      'version', 'gdd', 'sim', 'grid', 'level', 'adjacency', 'triangle', 'targeting',
+      'cells', 'classes', 'auras', 'statuses', 'reactions', 'parts_bonus',
+      'profile_rules', 'ko', 'enemy_rules', 'enemies',
+    ]
+    expect(Object.keys(BALANCE).sort()).toEqual([...declared].sort())
+  })
+
+  it('expose le VFX et l’icône de chaque statut visible', () => {
+    for (const id of ['wet', 'roots', 'feather', 'poison', 'bleed', 'fragile'] as const) {
+      expect(BALANCE.statuses[id].vfx, id).toBeTruthy()
+      expect(BALANCE.statuses[id].icon, id).toBeTruthy()
+    }
+  })
 })
 ```
 
@@ -643,7 +697,7 @@ describe('données', () => {
 cd axie-td && npm test
 ```
 
-Attendu : 8 tests passent en plus des 4 de la tâche 1.
+Attendu : 10 tests passent, soit 16 avec les 6 de la tâche 1.
 
 - [ ] **Étape 5 : Vérifier la compilation TypeScript**
 
