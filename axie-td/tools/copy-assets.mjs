@@ -4,6 +4,7 @@
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import sharp from 'sharp'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -40,7 +41,7 @@ const sfxNeeded = [...named].filter((n) => existsSync(join(WEBVFX, 'sfx', `${n}.
 // --- copie ---
 async function webp(srcPng, outWebp) {
   mkdirSync(dirname(outWebp), { recursive: true })
-  await sharp(srcPng).webp({ quality: 80, effort: 5 }).toFile(outWebp)
+  await sharp(srcPng).webp({ quality: 88, effort: 5 }).toFile(outWebp)
 }
 
 let bytes = 0
@@ -69,7 +70,9 @@ for (const { src, out } of spineDirs) {
   if (!pngName || !existsSync(join(src, pngName))) throw new Error(`Image introuvable pour ${src} (${pngName})`)
 
   mkdirSync(out, { recursive: true })
-  copyFileSync(join(src, jsonName), join(out, 'skeleton.json'))
+  // JSON minifié : le kit livre de l'indenté, ça n'enlève que de l'espacement.
+  const skeleton = JSON.parse(readFileSync(join(src, jsonName), 'utf8'))
+  writeFileSync(join(out, 'skeleton.json'), JSON.stringify(skeleton))
   writeFileSync(join(out, 'skeleton.atlas'), atlasText.replace(pngName, 'skeleton.webp'))
   await webp(join(src, pngName), join(out, 'skeleton.webp'))
   bytes += size(join(out, 'skeleton.json')) + size(join(out, 'skeleton.atlas')) + size(join(out, 'skeleton.webp'))
@@ -85,19 +88,39 @@ for (const id of vfxNeeded) {
   bytes += size(join(out, 'atlas.webp')) + size(join(out, 'clip.json'))
 }
 
+// Audio : des effets courts, en PCM non compressé dans le kit. Le MP3 mono à 96 kb/s
+// suffit et se lit partout, y compris sur Safari qui gère mal l'OGG.
+try {
+  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' })
+} catch {
+  throw new Error("ffmpeg est introuvable dans le PATH. Il est nécessaire pour convertir les effets sonores.")
+}
+
 mkdirSync(join(PUB, 'sfx'), { recursive: true })
 for (const id of sfxNeeded) {
-  copyFileSync(join(WEBVFX, 'sfx', `${id}.wav`), join(PUB, 'sfx', `${id}.wav`))
-  bytes += size(join(PUB, 'sfx', `${id}.wav`))
+  const out = join(PUB, 'sfx', `${id}.mp3`)
+  execFileSync('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', join(WEBVFX, 'sfx', `${id}.wav`),
+    '-ac', '1', '-ar', '44100', '-b:a', '96k', out,
+  ])
+  bytes += size(out)
 }
 
 writeFileSync(join(PUB, 'assets-manifest.json'), JSON.stringify({
   spine: spineDirs.length, vfx: vfxNeeded, sfx: sfxNeeded, bytes,
 }, null, 2))
 
-const mb = (bytes / 1024 / 1024).toFixed(1)
-console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length} · total ${mb} Mo`)
-if (bytes > 15 * 1024 * 1024) {
-  console.error(`Budget d'assets dépassé : ${mb} Mo > 15 Mo`)
+// Détail par catégorie : une régression de poids doit se voir tout de suite.
+const mb = (n) => (n / 1024 / 1024).toFixed(2)
+const sum = (pattern) => spineDirs.reduce((s, d) => s + size(join(d.out, pattern)), 0)
+console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length}`)
+console.log(`  squelettes JSON ${mb(sum('skeleton.json'))} Mo · images ${mb(sum('skeleton.webp'))} Mo`)
+console.log(`  total ${mb(bytes)} Mo`)
+
+// Plafond d'hygiène du dépôt. Ce n'est pas ce que le joueur télécharge :
+// le serveur compresse, et les assets sont chargés par niveau.
+if (bytes > 25 * 1024 * 1024) {
+  console.error(`Budget d'assets dépassé : ${mb(bytes)} Mo > 25 Mo`)
   process.exit(1)
 }

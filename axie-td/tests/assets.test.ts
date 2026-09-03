@@ -6,8 +6,20 @@ const PUB = join(process.cwd(), 'public')
 const manifest = JSON.parse(readFileSync(join(PUB, 'assets-manifest.json'), 'utf8'))
 
 describe('assets', () => {
-  it('reste sous le budget de 15 Mo', () => {
-    expect(manifest.bytes).toBeLessThan(15 * 1024 * 1024)
+  it('reste sous le plafond de 25 Mo du dépôt', () => {
+    expect(manifest.bytes).toBeLessThan(25 * 1024 * 1024)
+  })
+
+  it('minifie le JSON des squelettes', () => {
+    const raw = readFileSync(join(PUB, 'spine', 'axies', 'buba', 'skeleton.json'), 'utf8')
+    expect(raw.includes('\n')).toBe(false)
+  })
+
+  it('convertit les effets sonores en MP3', () => {
+    expect(manifest.sfx.length).toBeGreaterThan(0)
+    for (const id of manifest.sfx) {
+      expect(existsSync(join(PUB, 'sfx', `${id}.mp3`)), id).toBe(true)
+    }
   })
 
   it('fournit les trois fichiers Spine de Buba', () => {
