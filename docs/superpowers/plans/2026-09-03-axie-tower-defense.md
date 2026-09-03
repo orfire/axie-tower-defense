@@ -1091,7 +1091,10 @@ export function makeEnemy(w: World, type: string, d = 0): EnemyUnit {
   return {
     uid: w.nextUid++,
     type,
-    def,
+    // Copie par instance, pas une référence sur BALANCE.enemies : la tâche 9 efface
+    // un champ sur la définition d'un mort, ce qui corromprait tous les autres
+    // ennemis du même type si l'objet était partagé.
+    def: { ...def },
     cls: def.class,
     tier: def.tier,
     maxHp: def.hp,
@@ -1241,7 +1244,7 @@ describe('apparition', () => {
     expect(w.enemies).toHaveLength(1) // le spawn à t = 0
     w.t = 1.4
     spawnDue(w)
-    expect(w.enemies).toHaveLength(2) // celui de t = 1.5 n'est pas encore là
+    expect(w.enemies).toHaveLength(1) // celui de t = 1.5 n'est pas encore là
     w.t = 1.5
     spawnDue(w)
     expect(w.enemies).toHaveLength(2)
@@ -2347,7 +2350,6 @@ cd axie-td && git add -A && git commit -m "feat: attaques des Axies et quatre r�
 ## Tâche 9 : Comportements des chimères
 
 **Fichiers :**
-- Modifier : `src/sim/spawn.ts` (copie de `def`, étape 4)
 - Créer : `src/sim/enemies.ts`
 - Test : `tests/sim/enemies.test.ts`
 
@@ -2569,7 +2571,7 @@ export function resolveDeaths(w: World): void {
     for (let i = 0; i < e.def.on_death_spawn.count; i++) {
       spawned.push(makeEnemy(w, e.def.on_death_spawn.enemy, e.d))
     }
-    // `def` est une copie par instance (voir spawn.ts) : effacer ici n'affecte
+    // `def` est une copie par instance, faite dans spawn.ts : effacer ici n'affecte
     // que ce mort, pas les autres chimères du même type.
     e.def.on_death_spawn = undefined
   }
@@ -2578,15 +2580,7 @@ export function resolveDeaths(w: World): void {
 }
 ```
 
-- [ ] **Étape 4 : Donner à chaque ennemi sa propre copie de `def`**
-
-Sans cette copie, effacer `on_death_spawn` dans `resolveDeaths` casserait la scission de **tous** les slime-fusion suivants, puisque `def` vient de `BALANCE.enemies` et serait partagé. Dans `src/sim/spawn.ts`, remplacer la ligne `def,` par :
-
-```ts
-    def: { ...def },
-```
-
-- [ ] **Étape 5 : Lancer le test**
+- [ ] **Étape 4 : Lancer le test**
 
 ```bash
 cd axie-td && npx vitest run tests/sim/enemies.test.ts
