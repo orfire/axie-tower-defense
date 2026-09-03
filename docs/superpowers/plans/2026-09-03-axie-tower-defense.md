@@ -3169,10 +3169,21 @@ describe('déterminisme', () => {
     const w = createWorld(1)
     const olek = place(w, 'olek', w.level.path[6])!
     startWave(w)
-    // On laisse le premier slime venir se coller au bloqueur.
-    for (let i = 0; i < Math.round(8 / DT) && w.phase === 'wave'; i++) step(w)
+    // On avance jusqu'au blocage, et pas au-delà. Attendre un temps fixe laisserait
+    // Olek entamer sa cible avant la mesure : un slime à 40 PV sans armure tombe en
+    // 4 s environ sous ses 9,6 dégâts par seconde, et mourrait au milieu de la
+    // seconde mesurée, ce qui la trouerait.
+    let waited = 0
+    while (
+      waited < Math.round(20 / DT)
+      && w.phase === 'wave'
+      && !w.enemies.some((e) => e.blockedBy === olek.uid)
+    ) {
+      step(w)
+      waited++
+    }
     const blocked = w.enemies.find((e) => e.blockedBy === olek.uid)
-    expect(blocked, 'aucun ennemi bloqué après 8 s').toBeDefined()
+    expect(blocked, 'aucun ennemi bloqué après 20 s').toBeDefined()
 
     const before = olek.hp
     for (let i = 0; i < Math.round(1 / DT); i++) step(w)
