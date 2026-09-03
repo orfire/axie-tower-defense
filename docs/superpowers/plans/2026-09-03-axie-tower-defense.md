@@ -728,7 +728,6 @@ cd axie-td && git add -A && git commit -m "feat: types et chargement validé des
   - `function center(cell: Cell): Vec` — centre d'une case, en unités de case
   - `function dist(a: Vec, b: Vec): number`
   - `function sameCell(a: Cell, b: Cell): boolean`
-  - `function orthNeighbors(cell: Cell, cols: number, rows: number): Cell[]`
   - `function isOrthAdjacent(a: Cell, b: Cell): boolean`
   - `class Board` avec `kindAt(cell): CellKind | null`, `pathIndexOf(cell): number`, `posAt(d): Vec`, `cellAt(d): Cell`, `length: number`
 
@@ -741,7 +740,7 @@ cd axie-td && git add -A && git commit -m "feat: types et chargement validé des
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { Board, center, dist, isOrthAdjacent, orthNeighbors } from '../../src/sim/grid'
+import { Board, center, dist, isOrthAdjacent, sameCell } from '../../src/sim/grid'
 import { levelDef } from '../../src/data/load'
 
 describe('géométrie', () => {
@@ -755,12 +754,23 @@ describe('géométrie', () => {
     expect(dist(center([0, 0]), center([3, 4]))).toBe(5)
   })
 
-  it('ne compte que les 4 voisins orthogonaux', () => {
-    expect(orthNeighbors([3, 3], 7, 10)).toHaveLength(4)
-    expect(orthNeighbors([0, 0], 7, 10)).toHaveLength(2)
-    expect(isOrthAdjacent([3, 3], [3, 4])).toBe(true)
-    expect(isOrthAdjacent([3, 3], [4, 4])).toBe(false)
+  it('ne reconnaît que l’adjacence orthogonale', () => {
+    // Les 4 voisins, dans les 4 directions.
+    for (const n of [[3, 2], [3, 4], [2, 3], [4, 3]] as const) {
+      expect(isOrthAdjacent([3, 3], n), String(n)).toBe(true)
+    }
+    // Les 4 diagonales : jamais. C'est la règle qui tient tout le système d'auras.
+    for (const d of [[2, 2], [4, 4], [2, 4], [4, 2]] as const) {
+      expect(isOrthAdjacent([3, 3], d), String(d)).toBe(false)
+    }
+    // Une case n'est pas sa propre voisine, et rien au-delà d'un pas.
     expect(isOrthAdjacent([3, 3], [3, 3])).toBe(false)
+    expect(isOrthAdjacent([3, 3], [3, 5])).toBe(false)
+  })
+
+  it('compare deux cases', () => {
+    expect(sameCell([3, 4], [3, 4])).toBe(true)
+    expect(sameCell([3, 4], [4, 3])).toBe(false)
   })
 })
 
@@ -828,16 +838,6 @@ export function isOrthAdjacent(a: Cell, b: Cell): boolean {
   return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1
 }
 
-export function orthNeighbors(cell: Cell, cols: number, rows: number): Cell[] {
-  const out: Cell[] = []
-  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-    const c = cell[0] + dc
-    const r = cell[1] + dr
-    if (c >= 0 && c < cols && r >= 0 && r < rows) out.push([c, r])
-  }
-  return out
-}
-
 const key = (cell: Cell) => `${cell[0]},${cell[1]}`
 
 /** Vue immuable d'un niveau : type de chaque case et géométrie du chemin. */
@@ -854,7 +854,10 @@ export class Board {
     for (const h of level.hills) this.hills.add(key(h))
   }
 
-  /** `null` si la case est hors grille. */
+  /**
+   * `null` si la case est hors grille. Le chemin gagne sur la colline en cas de
+   * chevauchement, mais tools/gen-data.mjs refuse déjà ce cas à la génération.
+   */
   kindAt(cell: Cell): CellKind | null {
     const [c, r] = cell
     if (c < 0 || c >= this.cols || r < 0 || r >= this.rows) return null
@@ -897,7 +900,7 @@ export class Board {
 cd axie-td && npx vitest run tests/sim/grid.test.ts
 ```
 
-Attendu : 7 tests passent.
+Attendu : 8 tests passent, soit 24 avec les 16 des tâches 1 et 2.
 
 - [ ] **Étape 5 : Commiter**
 
@@ -2627,6 +2630,7 @@ cd axie-td && git add -A && git commit -m "feat: comportements des chimères, ti
 import { BALANCE, axieDef } from '../data/load'
 import type { Cell, ClassId } from '../data/types'
 import { recomputeAuras } from './auras'
+import { sameCell } from './grid'
 import type { AxieUnit } from './types'
 import { currentBudget, type World } from './world'
 
@@ -2656,9 +2660,7 @@ export function canPlace(w: World, axieId: string, cell: Cell, movingUid = -1): 
     }
   }
 
-  const occupied = w.axies.some(
-    (a) => a.uid !== movingUid && a.cell[0] === cell[0] && a.cell[1] === cell[1],
-  )
+  const occupied = w.axies.some((a) => a.uid !== movingUid && sameCell(a.cell, cell))
   if (occupied) return { ok: false, reason: 'Case déjà occupée' }
 
   if (movingUid < 0 && spentEnergy(w) + BALANCE.classes[cls].cost > currentBudget(w)) {
@@ -6067,7 +6069,6 @@ center(cell: Cell): Vec                     // (col + 0.5, row + 0.5)
 dist(a: Vec, b: Vec): number
 sameCell(a: Cell, b: Cell): boolean
 isOrthAdjacent(a: Cell, b: Cell): boolean   // faux si a === b
-orthNeighbors(cell: Cell, cols: number, rows: number): Cell[]
 class Board {
   constructor(level: LevelDef, cols?: number, rows?: number)
   readonly path: Cell[]
