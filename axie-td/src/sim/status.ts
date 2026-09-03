@@ -26,8 +26,12 @@ export function applyStatus(w: World, e: EnemyUnit, id: StatusId, opts: ApplyOpt
   if (id === 'roots') return
 
   const def = BALANCE.statuses[id]
-  const base = typeof def.duration === 'number' ? def.duration : 0
-  const remaining = base * (opts.durationMult ?? 1)
+  // Un statut sans durée chiffrée n'a rien à faire ici : il serait posé avec une
+  // durée nulle et expirerait au premier tick, en silence. Mieux vaut échouer fort.
+  if (typeof def.duration !== 'number') {
+    throw new Error(`Statut sans durée chiffrée, non applicable par applyStatus : ${id}`)
+  }
+  const remaining = def.duration * (opts.durationMult ?? 1)
   const tickMult = opts.tickMult ?? 1
 
   const existing = e.statuses.find((s) => s.id === id)

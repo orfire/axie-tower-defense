@@ -35,6 +35,23 @@ describe('statuts', () => {
     expect(hasStatus(e, 'poison')).toBe(true)
   })
 
+  it('garde le plus fort des deux à la réapplication', () => {
+    // La tâche 8 pose des poisons de durée doublée (Enracinement) et de cadence
+    // doublée (Essaim). Un coup ordinaire qui suit ne doit pas les effacer,
+    // sinon la réaction en chaîne serait annulée sans que rien n'échoue.
+    const w = createWorld(1)
+    const e = makeEnemy(w, 'slime'); w.enemies.push(e)
+    applyStatus(w, e, 'poison', { tickMult: 2, durationMult: 2 })
+    const strong = e.statuses.find((s) => s.id === 'poison')!
+    expect(strong.remaining).toBeCloseTo(8)
+    expect(strong.tickMult).toBe(2)
+
+    applyStatus(w, e, 'poison') // coup ordinaire, sans multiplicateur
+    const after = e.statuses.find((s) => s.id === 'poison')!
+    expect(after.remaining).toBeCloseTo(8) // et non 4
+    expect(after.tickMult).toBe(2) // et non 1
+  })
+
   it('inflige 4 dégâts par seconde en poison, sans tenir compte de l’armure', () => {
     const w = createWorld(5)
     const treant = makeEnemy(w, 'treant'); w.enemies.push(treant) // 40 % d'armure
@@ -53,6 +70,8 @@ describe('statuts', () => {
 
   it('pose Racines quand une Plante est voisine et le retire sinon', () => {
     const w = createWorld(1)
+    // path[3] vaut [1,1] au niveau 1, et son voisin de droite [2,1] est path[2],
+    // donc sur le chemin. On prend le voisin de gauche, en plaine.
     const cell = w.level.path[3]
     const olek = placeTestAxie(w, 'olek', [cell[0] - 1, cell[1]])
     startWave(w)
