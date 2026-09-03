@@ -1767,6 +1767,23 @@ describe('statuts', () => {
     expect(hasStatus(e, 'poison')).toBe(true)
   })
 
+  it('garde le plus fort des deux à la réapplication', () => {
+    // La tâche 8 pose des poisons de durée doublée (Enracinement) et de cadence
+    // doublée (Essaim). Un coup ordinaire qui suit ne doit pas les effacer,
+    // sinon la réaction en chaîne serait annulée sans que rien n'échoue.
+    const w = createWorld(1)
+    const e = makeEnemy(w, 'slime'); w.enemies.push(e)
+    applyStatus(w, e, 'poison', { tickMult: 2, durationMult: 2 })
+    const strong = e.statuses.find((s) => s.id === 'poison')!
+    expect(strong.remaining).toBeCloseTo(8)
+    expect(strong.tickMult).toBe(2)
+
+    applyStatus(w, e, 'poison') // coup ordinaire, sans multiplicateur
+    const after = e.statuses.find((s) => s.id === 'poison')!
+    expect(after.remaining).toBeCloseTo(8) // et non 4
+    expect(after.tickMult).toBe(2) // et non 1
+  })
+
   it('inflige 4 dégâts par seconde en poison, sans tenir compte de l’armure', () => {
     const w = createWorld(5)
     const treant = makeEnemy(w, 'treant'); w.enemies.push(treant) // 40 % d'armure
@@ -1858,8 +1875,12 @@ export function applyStatus(w: World, e: EnemyUnit, id: StatusId, opts: ApplyOpt
   if (id === 'roots') return
 
   const def = BALANCE.statuses[id]
-  const base = typeof def.duration === 'number' ? def.duration : 0
-  const remaining = base * (opts.durationMult ?? 1)
+  // Un statut sans durée chiffrée n'a rien à faire ici : il serait posé avec une
+  // durée nulle et expirerait au premier tick, en silence. Mieux vaut échouer fort.
+  if (typeof def.duration !== 'number') {
+    throw new Error(`Statut sans durée chiffrée, non applicable par applyStatus : ${id}`)
+  }
+  const remaining = def.duration * (opts.durationMult ?? 1)
   const tickMult = opts.tickMult ?? 1
 
   const existing = e.statuses.find((s) => s.id === id)
@@ -1923,7 +1944,7 @@ export function tickStatuses(w: World): void {
 cd axie-td && npx vitest run tests/sim/status.test.ts
 ```
 
-Attendu : 7 tests passent. Si le poison sur le treant retire moins de 4 PV, c'est que `ignoresArmor` n'est pas transmis.
+Attendu : 8 tests passent, soit 49 avec les 41 des tâches précédentes. Si le poison sur le treant retire moins de 4 PV, c'est que `ignoresArmor` n'est pas transmis.
 
 - [ ] **Étape 5 : Commiter**
 
