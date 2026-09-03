@@ -7,11 +7,17 @@ import { DT } from '../../src/sim/types'
 import { placeTestAxie } from './helpers'
 
 /**
- * Case adjacente à `c`, décalée en y (pas en x) : au niveau 1, `path[6] + (1,0)`
- * tombe sur `path[7]` (chemin, pas plaine) — vérifié sur `data/levels/01.json`.
- * Le décalage en y évite la collision et retombe bien en plaine.
+ * Premier voisin orthogonal en plaine d'une case de chemin.
+ * Un décalage fixe ne convient pas : selon le niveau, le voisin de droite d'une
+ * case de chemin est lui-même sur le chemin, et l'Axie ne serait plus en plaine.
  */
-const near = (c: readonly [number, number]): [number, number] => [c[0], c[1] + 1]
+function nearPlain(w: ReturnType<typeof createWorld>, cell: readonly [number, number]): [number, number] {
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n: [number, number] = [cell[0] + dc, cell[1] + dr]
+    if (w.board.kindAt(n) === 'plain') return n
+  }
+  throw new Error(`Aucun voisin en plaine pour ${cell}`)
+}
 
 describe('chimères', () => {
   it('fait frapper le bloqueur par l’ennemi bloqué', () => {
@@ -26,7 +32,7 @@ describe('chimères', () => {
   it('épargne les Axies en plaine de toute mêlée', () => {
     const w = createWorld(1)
     const olek = placeTestAxie(w, 'olek', w.level.path[6])
-    const puffy = placeTestAxie(w, 'puffy', near(w.level.path[6]))
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[6]))
     startWave(w)
     const e = makeEnemy(w, 'slime'); e.d = 4; w.enemies.push(e)
     for (let i = 0; i < 120; i++) { w.t += DT; moveEnemies(w); enemyActions(w) }
@@ -36,7 +42,7 @@ describe('chimères', () => {
 
   it('fait tirer slime-attack sur un Axie à portée', () => {
     const w = createWorld(4)
-    const puffy = placeTestAxie(w, 'puffy', near(w.level.path[3]))
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[3]))
     startWave(w)
     const e = makeEnemy(w, 'slime-attack'); e.d = 3; w.enemies.push(e)
     for (let i = 0; i < 90; i++) { w.t += DT; enemyActions(w) }
@@ -44,6 +50,8 @@ describe('chimères', () => {
   })
 
   it('empêche slime-attack d’atteindre une colline', () => {
+    // On sème un tireur sur chaque case du chemin : aucun ne doit toucher la colline,
+    // quelle que soit sa position, puisque hits_hill vaut faux pour ce type.
     const w = createWorld(4)
     const momo = placeTestAxie(w, 'momo', w.level.hills[0])
     startWave(w)
@@ -54,22 +62,27 @@ describe('chimères', () => {
     expect(momo.hp).toBe(momo.maxHp)
   })
 
-  it('laisse dryad-mage atteindre une colline', () => {
+  it('touche en revanche un Axie en plaine, à portée', () => {
+    // Contrôle que le test précédent prouve bien l'exclusion des collines
+    // et non simplement que le tireur ne touche jamais rien.
+    const w = createWorld(4)
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[3]))
+    startWave(w)
+    const e = makeEnemy(w, 'slime-attack'); e.d = 3; w.enemies.push(e)
+    for (let i = 0; i < 120; i++) { w.t += DT; enemyActions(w) }
+    expect(puffy.hp).toBeLessThan(puffy.maxHp)
+  })
+
+  it('laisse dryad-mage atteindre la colline la plus proche du chemin', () => {
+    // Le rayon du mage vaut 1,5 et la colline la plus proche du chemin est à 1,414
+    // au niveau 6. C'est le seul cas où sa menace anti-colline peut se matérialiser,
+    // et tools/gen-data.mjs vérifie que chaque niveau à dryades en offre au moins un.
     const w = createWorld(6)
-    // Sur les 8 niveaux, la colline la plus proche du chemin est à √2 case
-    // (diagonale) — jamais à 1 case ou moins. Le rayon de zone du mage (1)
-    // ne peut donc atteindre AUCUNE colline réelle du jeu tel quel : ce n'est
-    // pas un mauvais choix d'index (hills[0] vs hills[1]) mais une limite
-    // numérique de la donnée. hills[1] est la colline la plus proche
-    // (√2 ≈ 1,414) ; on élargit le rayon de cette seule instance d'ennemi
-    // pour isoler la règle testée (hits_hill laisse la zone atteindre une
-    // cible de type colline dans son rayon), sans toucher balance.json.
-    const hill = w.level.hills[1]
+    const { hill, d } = closestHill(w)
     const momo = placeTestAxie(w, 'momo', hill)
     startWave(w)
     const e = makeEnemy(w, 'dryad-mage')
-    e.d = nearestIndex(w, hill)
-    e.def.aoe!.radius = 1.5
+    e.d = d
     w.enemies.push(e)
     for (let i = 0; i < 200; i++) { w.t += DT; enemyActions(w) }
     expect(momo.hp).toBeLessThan(momo.maxHp)
@@ -119,14 +132,19 @@ describe('chimères', () => {
   })
 })
 
-/** Index du chemin le plus proche d'une case, pour placer un tireur à portée. */
-function nearestIndex(w: ReturnType<typeof createWorld>, cell: readonly [number, number]): number {
-  let best = 0
-  let bestD = Infinity
-  for (let i = 0; i < w.board.length; i++) {
-    const p = w.board.posAt(i)
-    const d = Math.hypot(p.x - (cell[0] + 0.5), p.y - (cell[1] + 0.5))
-    if (d < bestD) { bestD = d; best = i }
+/**
+ * Colline la plus proche du chemin, et la progression `d` qui l'approche au mieux.
+ * Recherche fine, pas seulement sur les index entiers : un tireur se place aussi
+ * entre deux cases.
+ */
+function closestHill(w: ReturnType<typeof createWorld>) {
+  let best = { hill: w.level.hills[0], d: 0, dist: Infinity }
+  for (const hill of w.level.hills) {
+    for (let d = 0; d <= w.board.length - 1; d += 0.05) {
+      const p = w.board.posAt(d)
+      const dist = Math.hypot(p.x - (hill[0] + 0.5), p.y - (hill[1] + 0.5))
+      if (dist < best.dist) best = { hill, d, dist }
+    }
   }
   return best
 }
