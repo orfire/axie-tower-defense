@@ -3067,6 +3067,15 @@ function nearPlain(w: ReturnType<typeof createWorld>, cell: readonly [number, nu
   throw new Error(`Aucun voisin en plaine pour ${cell}`)
 }
 
+/**
+ * TypeScript garde le type littéral `'placement'` de `w.phase` à travers l'appel
+ * à `startWave`, et signale alors une comparaison impossible (TS2367). Passer par
+ * une fonction casse cette déduction, sans rien changer au comportement.
+ */
+function isWave(w: ReturnType<typeof createWorld>): boolean {
+  return w.phase === 'wave'
+}
+
 describe('étoiles', () => {
   it('convertit les PV restants en étoiles', () => {
     expect(starsFor(3)).toBe(3)
@@ -3082,9 +3091,13 @@ describe('vague', () => {
     // avec le dépassement quand il y a attaque. Un test de bout en bout passerait
     // au travers d'une erreur de rythme : on la mesure ici, directement.
     const w = createWorld(1)
-    const momo = place(w, 'momo', [3, 3])!
+    // [3, 3] est l'index 7 du chemin au niveau 1 : Momo, classe à distance, ne peut
+    // pas s'y poser. [2, 2] est en plaine et à portée de l'ennemi immobile en d = 3.
+    const momo = place(w, 'momo', [2, 2])!
     startWave(w)
-    const e = makeEnemy(w, 'treant') // assez de PV pour encaisser la volée
+    // slime : 0 % d'armure. Le treant en a 40 %, que la formule de comptage
+    // ci-dessous ne modélise pas, puisqu'elle ne fait que le triangle de classes.
+    const e = makeEnemy(w, 'slime')
     e.d = 3
     w.enemies.push(e)
 
@@ -3108,7 +3121,7 @@ describe('vague', () => {
     const w = createWorld(1)
     for (let i = 0; i < 8 && w.phase === 'placement'; i++) {
       startWave(w)
-      for (let k = 0; k < 180 / DT && w.phase === 'wave'; k++) step(w)
+      for (let k = 0; k < 180 / DT && isWave(w); k++) step(w)
     }
     expect(w.phase).toBe('lost')
     expect(w.lives).toBeLessThanOrEqual(0)
@@ -3160,7 +3173,7 @@ describe('déterminisme', () => {
 cd axie-td && npx vitest run tests/sim/placement.test.ts tests/sim/game.test.ts
 ```
 
-Attendu : 15 tests passent, soit 92 avec les 77 des tâches précédentes.
+Attendu : 16 tests passent, soit 93 avec les 77 des tâches précédentes.
 
 Si « gagne le niveau 1 » échoue, la formation de référence est trop faible. Renforcer en ajoutant `place(w, 'puffy', ...)` sur une case voisine libre, et reporter la même formation dans `tools/balance-run.mjs` à la tâche 21. Si à l'inverse « perd le niveau » échoue parce que le joueur survit sans rien poser, le niveau 1 est trop facile : le signaler dans le rapport de tâche, c'est une décision d'équilibrage pour Edouard, pas une correction à faire seul.
 
