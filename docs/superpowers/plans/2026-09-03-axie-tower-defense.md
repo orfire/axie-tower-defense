@@ -1280,7 +1280,7 @@ describe('déplacement', () => {
 describe('blocage', () => {
   it('arrête un ennemi devant le bloqueur', () => {
     const w = createWorld(1)
-    placeTestAxie(w, 'olek', w.level.path[6])
+    const olek = placeTestAxie(w, 'olek', w.level.path[6])
     startWave(w)
     spawnDue(w)
     const slime = w.enemies[0]
@@ -1290,12 +1290,12 @@ describe('blocage', () => {
     }
     expect(slime.alive).toBe(true)
     expect(slime.d).toBeCloseTo(5, 5) // s'arrête sur la case 5, le bloqueur est en 6
-    expect(slime.blockedBy).toBeGreaterThan(0)
+    expect(slime.blockedBy).toBe(olek.uid)
   })
 
   it('met les suivants en file, une case par ennemi', () => {
     const w = createWorld(1)
-    placeTestAxie(w, 'olek', w.level.path[6])
+    const olek = placeTestAxie(w, 'olek', w.level.path[6])
     startWave(w)
     w.t = 10
     spawnDue(w)
@@ -1307,6 +1307,14 @@ describe('blocage', () => {
     expect(stopped[0].d).toBeCloseTo(5, 5)
     expect(stopped[1].d).toBeCloseTo(4, 5)
     expect(stopped[2].d).toBeCloseTo(3, 5)
+
+    // Seul celui de tête frappe le bloqueur. La tâche 9 fait reposer les dégâts
+    // de mêlée sur ce champ : s'il fuitait sur toute la file, chaque ennemi de la
+    // queue taperait le bloqueur, et l'équilibrage serait faux sans erreur visible.
+    expect(stopped[0].blockedBy).toBe(olek.uid)
+    for (const behind of stopped.slice(1)) {
+      expect(behind.blockedBy, `uid ${behind.uid}`).toBe(-1)
+    }
   })
 
   it('libère le passage quand le bloqueur est KO', () => {
