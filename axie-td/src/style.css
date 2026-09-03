@@ -1,0 +1,5 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b221e; }
+body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+#app { position: relative; width: 100vw; height: 100dvh; overflow: hidden; }
