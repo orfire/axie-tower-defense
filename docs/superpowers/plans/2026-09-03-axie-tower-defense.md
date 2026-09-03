@@ -70,7 +70,7 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
 ## Tâche 1 : Squelette du projet et pipeline d'assets
 
 **Fichiers :**
-- Créer : `axie-td/package.json`, `axie-td/tsconfig.json`, `axie-td/vite.config.ts`, `axie-td/index.html`, `axie-td/.gitignore`, `axie-td/src/main.ts`, `axie-td/src/style.css`
+- Créer : `axie-td/package.json`, `axie-td/tsconfig.json`, `axie-td/vite.config.ts`, `axie-td/index.html`, `axie-td/src/main.ts`, `axie-td/src/style.css`
 - Créer : `axie-td/tools/copy-assets.mjs`
 - Test : `axie-td/tests/assets.test.ts`
 
