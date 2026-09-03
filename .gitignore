@@ -1,0 +1,18 @@
+# Kits officiels Sky Mavis : sources de travail, jamais redistribuées.
+# La charte du concours interdit de repackager les kits Axie en téléchargements
+# d'assets autonomes. Les assets utilisés sont régénérés par axie-td/tools/copy-assets.mjs.
+/unity-axie-gtk2d/
+/axie-origins-asset-kit/
+
+# Dépendances et sorties de build
+node_modules/
+dist/
+.vercel/
+
+# Espace de travail des agents (scratch git-ignoré)
+.superpowers/
+
+# Systèmes de fichiers
+Thumbs.db
+desktop.ini
+.DS_Store

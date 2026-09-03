@@ -1,0 +1,324 @@
+{
+  "id": 3,
+  "name": "Le sentier des loups",
+  "biome": "sentier",
+  "hills": [
+    [
+      0,
+      8
+    ]
+  ],
+  "path": [
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      5,
+      8
+    ],
+    [
+      5,
+      9
+    ]
+  ],
+  "draft": {
+    "forced": null
+  },
+  "waves": [
+    {
+      "budget": 3,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 4,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 0.9,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.6,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 4,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "slime"
+        },
+        {
+          "t": 1.5,
+          "enemy": "slime"
+        },
+        {
+          "t": 3,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 0.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.6,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 0.8,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 1.6,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 3,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 8.6,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.5,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.9,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.6,
+          "enemy": "wolf-gray"
+        }
+      ]
+    }
+  ],
+  "exit": [
+    5,
+    9
+  ],
+  "entry": [
+    1,
+    0
+  ]
+}

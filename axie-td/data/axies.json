@@ -1,0 +1,498 @@
+{
+  "version": "1.0",
+  "axies": [
+    {
+      "id": "buba",
+      "name": "Buba",
+      "class": "beast",
+      "spine": "starter-axies/01-buba-beast",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "beast",
+        "horn": "beast",
+        "back": "beast",
+        "tail": "beast"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.36,
+        "rate": 0
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "olek",
+      "name": "Olek",
+      "class": "plant",
+      "spine": "starter-axies/02-olek-plant",
+      "parts": {
+        "eyes": "plant",
+        "ears": "plant",
+        "mouth": "plant",
+        "horn": "plant",
+        "back": "plant",
+        "tail": "plant"
+      },
+      "bonuses": {
+        "hp": 0.36,
+        "damage": 0,
+        "rate": 0
+      },
+      "profile": "Tank",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "puffy",
+      "name": "Puffy",
+      "class": "aquatic",
+      "spine": "starter-axies/03-puffy-aquatic",
+      "parts": {
+        "eyes": "aquatic",
+        "ears": "aquatic",
+        "mouth": "aquatic",
+        "horn": "aquatic",
+        "back": "aquatic",
+        "tail": "aquatic"
+      },
+      "bonuses": {
+        "hp": 0.18,
+        "damage": 0,
+        "rate": 0.18
+      },
+      "profile": "Hybride",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "momo",
+      "name": "Momo",
+      "class": "bird",
+      "spine": "starter-axies/12-momo-bird",
+      "parts": {
+        "eyes": "bird",
+        "ears": "bird",
+        "mouth": "bird",
+        "horn": "bird",
+        "back": "bird",
+        "tail": "bird"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0,
+        "rate": 0.36
+      },
+      "profile": "Rapide",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "pomodoro",
+      "name": "Pomodoro",
+      "class": "bug",
+      "spine": "starter-axies/06-pomodoro-bug",
+      "parts": {
+        "eyes": "bug",
+        "ears": "bug",
+        "mouth": "bug",
+        "horn": "bug",
+        "back": "bug",
+        "tail": "bug"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.18,
+        "rate": 0.18
+      },
+      "profile": "Hybride",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "venoki",
+      "name": "Venoki",
+      "class": "reptile",
+      "spine": "starter-axies/07-venoki-reptile",
+      "parts": {
+        "eyes": "reptile",
+        "ears": "reptile",
+        "mouth": "reptile",
+        "horn": "reptile",
+        "back": "reptile",
+        "tail": "reptile"
+      },
+      "bonuses": {
+        "hp": 0.24,
+        "damage": 0.12,
+        "rate": 0
+      },
+      "profile": "Tank",
+      "unlock": {
+        "type": "start"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "xia",
+      "name": "Xia",
+      "class": "beast",
+      "spine": "starter-axies/19-xia-beast",
+      "parts": {
+        "eyes": "bird",
+        "ears": "bird",
+        "mouth": "beast",
+        "horn": "beast",
+        "back": "beast",
+        "tail": "beast"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.24,
+        "rate": 0.12
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 2
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "ena",
+      "name": "Ena",
+      "class": "plant",
+      "spine": "starter-axies/04-ena-plant",
+      "parts": {
+        "eyes": "reptile",
+        "ears": "reptile",
+        "mouth": "plant",
+        "horn": "plant",
+        "back": "plant",
+        "tail": "plant"
+      },
+      "bonuses": {
+        "hp": 0.32,
+        "damage": 0.04,
+        "rate": 0
+      },
+      "profile": "Tank",
+      "unlock": {
+        "type": "stars",
+        "stars": 3
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "dps-bird",
+      "name": "Kestrel",
+      "class": "bird",
+      "spine": "starter-axies/14-dps-bird",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "beast",
+        "horn": "beast",
+        "back": "bird",
+        "tail": "bird"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.24,
+        "rate": 0.12
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 5
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "noir",
+      "name": "Noir",
+      "class": "aquatic",
+      "spine": "starter-axies/21-noir-aquatic",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "beast",
+        "horn": "aquatic",
+        "back": "aquatic",
+        "tail": "aquatic"
+      },
+      "bonuses": {
+        "hp": 0.09,
+        "damage": 0.18,
+        "rate": 0.09
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 6
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "shilin",
+      "name": "Shilin",
+      "class": "bug",
+      "spine": "starter-axies/11-shilin-bug",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "bug",
+        "horn": "bug",
+        "back": "bug",
+        "tail": "bug"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.24,
+        "rate": 0.12
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 8
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "support-plant",
+      "name": "Fennel",
+      "class": "plant",
+      "spine": "starter-axies/04-support-plant",
+      "parts": {
+        "eyes": "aquatic",
+        "ears": "aquatic",
+        "mouth": "bird",
+        "horn": "bird",
+        "back": "plant",
+        "tail": "plant"
+      },
+      "bonuses": {
+        "hp": 0.18,
+        "damage": 0,
+        "rate": 0.18
+      },
+      "profile": "Hybride",
+      "unlock": {
+        "type": "stars",
+        "stars": 9
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "machito",
+      "name": "Machito",
+      "class": "reptile",
+      "spine": "starter-axies/08-machito-reptile",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "reptile",
+        "horn": "reptile",
+        "back": "reptile",
+        "tail": "reptile"
+      },
+      "bonuses": {
+        "hp": 0.16,
+        "damage": 0.2,
+        "rate": 0
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 11
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "bing",
+      "name": "Bing",
+      "class": "beast",
+      "spine": "starter-axies/20-bing-beast",
+      "parts": {
+        "eyes": "plant",
+        "ears": "plant",
+        "mouth": "plant",
+        "horn": "plant",
+        "back": "beast",
+        "tail": "beast"
+      },
+      "bonuses": {
+        "hp": 0.24,
+        "damage": 0.12,
+        "rate": 0
+      },
+      "profile": "Tank",
+      "unlock": {
+        "type": "stars",
+        "stars": 12
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "rouge",
+      "name": "Rouge",
+      "class": "aquatic",
+      "spine": "starter-axies/22-rouge-aquatic",
+      "parts": {
+        "eyes": "bird",
+        "ears": "bird",
+        "mouth": "aquatic",
+        "horn": "aquatic",
+        "back": "aquatic",
+        "tail": "aquatic"
+      },
+      "bonuses": {
+        "hp": 0.12,
+        "damage": 0,
+        "rate": 0.24
+      },
+      "profile": "Rapide",
+      "unlock": {
+        "type": "stars",
+        "stars": 14
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "dps-aquatic",
+      "name": "Marlin",
+      "class": "aquatic",
+      "spine": "starter-axies/09-dps-aquatic",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "beast",
+        "horn": "aquatic",
+        "back": "aquatic",
+        "tail": "aquatic"
+      },
+      "bonuses": {
+        "hp": 0.09,
+        "damage": 0.18,
+        "rate": 0.09
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 15
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "hybrid-plant",
+      "name": "Thistle",
+      "class": "plant",
+      "spine": "starter-axies/10-hybrid-plant",
+      "parts": {
+        "eyes": "beast",
+        "ears": "beast",
+        "mouth": "bird",
+        "horn": "bird",
+        "back": "plant",
+        "tail": "plant"
+      },
+      "bonuses": {
+        "hp": 0.12,
+        "damage": 0.12,
+        "rate": 0.12
+      },
+      "profile": "Hybride",
+      "unlock": {
+        "type": "stars",
+        "stars": 17
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "support-beast",
+      "name": "Bramble",
+      "class": "beast",
+      "spine": "starter-axies/13-support-beast",
+      "parts": {
+        "eyes": "plant",
+        "ears": "plant",
+        "mouth": "plant",
+        "horn": "plant",
+        "back": "aquatic",
+        "tail": "beast"
+      },
+      "bonuses": {
+        "hp": 0.27,
+        "damage": 0.06,
+        "rate": 0.03
+      },
+      "profile": "Tank",
+      "unlock": {
+        "type": "stars",
+        "stars": 18
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "dps-beast",
+      "name": "Fang",
+      "class": "beast",
+      "spine": "starter-axies/05-dps-beast",
+      "parts": {
+        "eyes": "bug",
+        "ears": "beast",
+        "mouth": "beast",
+        "horn": "beast",
+        "back": "beast",
+        "tail": "beast"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0.33,
+        "rate": 0.03
+      },
+      "profile": "DPS",
+      "unlock": {
+        "type": "stars",
+        "stars": 20
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    },
+    {
+      "id": "support-dusk",
+      "name": "Support Dusk",
+      "class": "dusk",
+      "spine": "starter-axies/15-support-dusk",
+      "parts": {
+        "eyes": "dusk",
+        "ears": "dusk",
+        "mouth": "dusk",
+        "horn": "dusk",
+        "back": "dusk",
+        "tail": "dusk"
+      },
+      "bonuses": {
+        "hp": 0,
+        "damage": 0,
+        "rate": 0
+      },
+      "profile": null,
+      "unlock": {
+        "type": "v2"
+      },
+      "note": "Répartition des parts : proposition GDD §9.3, à ajuster sur les sprites."
+    }
+  ]
+}

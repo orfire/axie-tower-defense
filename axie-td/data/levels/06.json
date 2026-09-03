@@ -1,0 +1,437 @@
+{
+  "id": 6,
+  "name": "Le cercle des dryades",
+  "biome": "cercle",
+  "hills": [
+    [
+      6,
+      1
+    ],
+    [
+      0,
+      9
+    ]
+  ],
+  "path": [
+    [
+      3,
+      0
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      2,
+      8
+    ],
+    [
+      3,
+      8
+    ],
+    [
+      3,
+      9
+    ]
+  ],
+  "draft": {
+    "forced": null
+  },
+  "waves": [
+    {
+      "budget": 4,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 1,
+          "enemy": "slime"
+        },
+        {
+          "t": 2,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 2,
+          "enemy": "slime"
+        },
+        {
+          "t": 3,
+          "enemy": "slime"
+        },
+        {
+          "t": 4,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 4,
+          "enemy": "slime"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 1.5,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 2,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 3,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 4,
+          "enemy": "dryad-ranger"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 2,
+          "enemy": "slime"
+        },
+        {
+          "t": 3,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 3,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 3,
+          "enemy": "slime"
+        },
+        {
+          "t": 4,
+          "enemy": "slime"
+        },
+        {
+          "t": 5,
+          "enemy": "slime"
+        },
+        {
+          "t": 6,
+          "enemy": "slime"
+        },
+        {
+          "t": 7,
+          "enemy": "slime"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 1,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 1.5,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 2.5,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 3,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 4,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 4.5,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 5.5,
+          "enemy": "dryad-fighter"
+        }
+      ]
+    },
+    {
+      "budget": 7,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 1,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 2,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 2.2,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 3.4,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 4,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 4,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 4.6,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 5.8,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 6,
+          "enemy": "slime-support"
+        }
+      ]
+    },
+    {
+      "budget": 7,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 1.2,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 2,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 2.4,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 3,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 3,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 3.6,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 4,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 4.8,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 5,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 6,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 6,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 8,
+          "enemy": "dryad-mage"
+        }
+      ]
+    },
+    {
+      "budget": 8,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 1,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 1.2,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 2,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 2.4,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 2.5,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 3.6,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 4,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 4,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 4.8,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 5.5,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 6,
+          "enemy": "dryad-fighter"
+        },
+        {
+          "t": 6,
+          "enemy": "dryad-mage"
+        },
+        {
+          "t": 6.5,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 7,
+          "enemy": "dryad-ranger"
+        },
+        {
+          "t": 9,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 10,
+          "enemy": "dryad-mage"
+        }
+      ]
+    }
+  ],
+  "exit": [
+    3,
+    9
+  ],
+  "entry": [
+    3,
+    0
+  ]
+}

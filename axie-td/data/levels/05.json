@@ -1,0 +1,393 @@
+{
+  "id": 5,
+  "name": "Le bosquet",
+  "biome": "bosquet",
+  "hills": [
+    [
+      6,
+      4
+    ]
+  ],
+  "path": [
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      1,
+      9
+    ]
+  ],
+  "draft": {
+    "forced": null
+  },
+  "waves": [
+    {
+      "budget": 4,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant"
+        },
+        {
+          "t": 1,
+          "enemy": "slime"
+        },
+        {
+          "t": 2,
+          "enemy": "slime"
+        },
+        {
+          "t": 3,
+          "enemy": "slime"
+        },
+        {
+          "t": 4,
+          "enemy": "slime"
+        },
+        {
+          "t": 5,
+          "enemy": "slime"
+        },
+        {
+          "t": 6,
+          "enemy": "slime"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 2.2,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 3.4,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 4,
+          "enemy": "treant"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant-flowering"
+        },
+        {
+          "t": 1,
+          "enemy": "slime"
+        },
+        {
+          "t": 2,
+          "enemy": "slime"
+        },
+        {
+          "t": 3,
+          "enemy": "treant"
+        },
+        {
+          "t": 3,
+          "enemy": "slime"
+        },
+        {
+          "t": 4,
+          "enemy": "slime"
+        },
+        {
+          "t": 5,
+          "enemy": "slime"
+        },
+        {
+          "t": 6,
+          "enemy": "slime"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 1.7,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 2.4,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 3.1,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 3.8,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 4,
+          "enemy": "treant"
+        },
+        {
+          "t": 4.5,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 5.2,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 5.9,
+          "enemy": "slime-forest-b"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant-flowering"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 2,
+          "enemy": "treant"
+        },
+        {
+          "t": 2.2,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 3.4,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 4.6,
+          "enemy": "slime-forest-a"
+        },
+        {
+          "t": 6,
+          "enemy": "treant"
+        }
+      ]
+    },
+    {
+      "budget": 7,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant"
+        },
+        {
+          "t": 1,
+          "enemy": "slime"
+        },
+        {
+          "t": 1.9,
+          "enemy": "slime"
+        },
+        {
+          "t": 2.8,
+          "enemy": "slime"
+        },
+        {
+          "t": 3.5,
+          "enemy": "treant"
+        },
+        {
+          "t": 3.7,
+          "enemy": "slime"
+        },
+        {
+          "t": 4.6,
+          "enemy": "slime"
+        },
+        {
+          "t": 5.5,
+          "enemy": "slime"
+        },
+        {
+          "t": 7,
+          "enemy": "treant"
+        },
+        {
+          "t": 8,
+          "enemy": "treant-flowering"
+        }
+      ]
+    },
+    {
+      "budget": 7,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant-fighter"
+        },
+        {
+          "t": 1,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 1.7,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 2.4,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 3,
+          "enemy": "treant"
+        },
+        {
+          "t": 3.1,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 3.8,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 4.5,
+          "enemy": "slime-forest-b"
+        },
+        {
+          "t": 6,
+          "enemy": "treant-flowering"
+        },
+        {
+          "t": 7,
+          "enemy": "treant"
+        }
+      ]
+    }
+  ],
+  "exit": [
+    1,
+    9
+  ],
+  "entry": [
+    1,
+    0
+  ]
+}

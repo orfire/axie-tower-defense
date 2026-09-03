@@ -1,0 +1,670 @@
+{
+  "id": 7,
+  "name": "La meute",
+  "biome": "meute",
+  "hills": [
+    [
+      6,
+      4
+    ],
+    [
+      3,
+      9
+    ]
+  ],
+  "path": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      0,
+      7
+    ],
+    [
+      0,
+      8
+    ],
+    [
+      0,
+      9
+    ]
+  ],
+  "draft": {
+    "forced": null
+  },
+  "waves": [
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 0.7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1,
+          "enemy": "slime"
+        },
+        {
+          "t": 1.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2,
+          "enemy": "slime"
+        },
+        {
+          "t": 2.1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3,
+          "enemy": "slime"
+        },
+        {
+          "t": 3.5,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "slime"
+        },
+        {
+          "t": 4.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.9,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 5,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.5,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.9,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 0.8,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.6,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 1.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2,
+          "enemy": "slime-defense"
+        },
+        {
+          "t": 2.4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 2.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.2,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 3.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 4,
+          "enemy": "slime-defense"
+        },
+        {
+          "t": 4.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6,
+          "enemy": "slime-defense"
+        }
+      ]
+    },
+    {
+      "budget": 6,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 6.4,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 7,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-aquatic-alpha"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 1.7,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 2.4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 3,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 3.1,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 4.5,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5.9,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 7,
+          "enemy": "slime-support"
+        }
+      ]
+    },
+    {
+      "budget": 8,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 2.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.8,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 3.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.6,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 4.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 6.4,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 8,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "treant"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 1.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 2.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 4.5,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 4.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.8,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5,
+          "enemy": "treant"
+        },
+        {
+          "t": 5.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.6,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 7,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7,
+          "enemy": "slime-support"
+        },
+        {
+          "t": 7.6,
+          "enemy": "wolf-gray"
+        }
+      ]
+    },
+    {
+      "budget": 9,
+      "spawns": [
+        {
+          "t": 0,
+          "enemy": "werewolf"
+        },
+        {
+          "t": 1,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 2.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 3.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 4.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 5.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 5.8,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 6.2,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 6.6,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 6.8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7,
+          "enemy": "wolf-alpha"
+        },
+        {
+          "t": 7.4,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 7.4,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 8,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 8.2,
+          "enemy": "wolf-aquatic"
+        },
+        {
+          "t": 8.6,
+          "enemy": "wolf-gray"
+        },
+        {
+          "t": 9,
+          "enemy": "wolf-aquatic"
+        }
+      ]
+    }
+  ],
+  "exit": [
+    0,
+    9
+  ],
+  "entry": [
+    0,
+    0
+  ]
+}

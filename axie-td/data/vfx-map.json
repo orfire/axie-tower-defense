@@ -1,0 +1,178 @@
+{
+  "version": "1.0",
+  "axie_attack": {
+    "beast": {
+      "spine": "attack/melee/tail-smash",
+      "vfx": "beast_smash",
+      "sfx": "beast_smash_attack"
+    },
+    "aquatic": {
+      "spine": "attack/ranged/cast-fly",
+      "vfx": "aquatic_projectile",
+      "sfx": [
+        "aquatic_projectile_attack",
+        "aquatic_projectile_fly",
+        "aquatic_projectile_hit"
+      ]
+    },
+    "plant": {
+      "spine": "attack/melee/horn-gore",
+      "vfx": "plant_gore",
+      "sfx": "plant_gore_attack"
+    },
+    "bird": {
+      "spine": "attack/ranged/cast-fly",
+      "vfx": "bird_projectile",
+      "sfx": [
+        "bird_projectile_attack",
+        "bird_projectile_fly",
+        "bird_projectile_hit"
+      ]
+    },
+    "bug": {
+      "spine": "attack/melee/mouth-bite",
+      "vfx": "bug_bite",
+      "sfx": "bug_bite_attack"
+    },
+    "reptile": {
+      "spine": "attack/ranged/cast-high",
+      "vfx": "reptile_cast",
+      "sfx": [
+        "reptile_cast_attack",
+        "reptile_cast_hit"
+      ]
+    }
+  },
+  "axie_place": {
+    "spine": "activity/appear",
+    "sfx_by_class": {
+      "beast": "beast_cast_attack",
+      "aquatic": "aquatic_cast_attack",
+      "plant": "plant_cast_attack",
+      "bird": "bird_cast_attack",
+      "bug": "bug_cast_attack",
+      "reptile": "reptile_cast_attack"
+    }
+  },
+  "axie_hit": {
+    "spine": "defense/hit-by-normal"
+  },
+  "axie_ko": {
+    "spine": "defense/hit-die",
+    "fallback": "defense/hit-by-normal-dramatic"
+  },
+  "axie_idle": {
+    "spine": "action/idle/normal",
+    "random": [
+      "action/idle/random-01",
+      "action/idle/random-02",
+      "action/idle/random-03"
+    ]
+  },
+  "axie_victory": {
+    "spine": "activity/victory-pose-back-flip"
+  },
+  "axie_unlock": {
+    "spine": "activity/appear"
+  },
+  "status": {
+    "wet": {
+      "vfx": "bubble",
+      "sfx": "bubble"
+    },
+    "roots": {
+      "vfx": "leaf",
+      "sfx": "leaf"
+    },
+    "blocked": {
+      "vfx": "taunt",
+      "sfx": "taunt"
+    },
+    "feather": {
+      "vfx": "feather",
+      "sfx": "feather"
+    },
+    "poison": {
+      "vfx": "poison_apply",
+      "sfx": null
+    },
+    "bleed": {
+      "vfx": "bleed_apply",
+      "sfx": null
+    },
+    "fragile": {
+      "vfx": "fragile",
+      "sfx": "weak"
+    },
+    "rage": {
+      "vfx": "rage",
+      "sfx": "power_gain"
+    }
+  },
+  "reaction": {
+    "ricochet": {
+      "vfx": "bird_projectile",
+      "sfx": "bird_projectile_hit",
+      "scale": 1.4
+    },
+    "rooting": {
+      "vfx": [
+        "leaf",
+        "poison_apply"
+      ],
+      "sfx": "leaf",
+      "scale": 1.3
+    },
+    "shatter": {
+      "vfx": [
+        "fragile",
+        "beast_smash"
+      ],
+      "sfx": "beast_smash_attack",
+      "scale": 1.6,
+      "pitch": 1.1
+    },
+    "burst": {
+      "vfx": "bleed_apply",
+      "sfx": "bug_smash_attack",
+      "scale": 2
+    }
+  },
+  "enemy": {
+    "walk": "action/move-forward",
+    "hit": "defense/hit-by-normal",
+    "die": "defense/hit-die",
+    "attack": "attack/melee/normal-attack",
+    "ranged_attack": "attack/ranged/cast-high",
+    "buff": "battle/get-buff",
+    "debuff": "battle/get-debuff",
+    "enrage": {
+      "vfx": "fury_form",
+      "sfx": "power_awaken"
+    },
+    "heal": {
+      "vfx": "heal",
+      "sfx": "heal"
+    },
+    "split": {
+      "vfx": "summon_on_death",
+      "sfx": null
+    }
+  },
+  "level": {
+    "leak": {
+      "sfx": "hex",
+      "screen_flash": 0.2
+    },
+    "wave_start": {
+      "sfx": "power_gain"
+    },
+    "stars": {
+      "sfx": [
+        "cure",
+        "cleanse",
+        "power_awaken"
+      ]
+    }
+  }
+}

@@ -1,0 +1,574 @@
+{
+  "version": "1.0",
+  "gdd": "design/GDD.md v1.0",
+  "sim": {
+    "tick_hz": 30,
+    "no_randomness": true
+  },
+  "grid": {
+    "cols": 7,
+    "rows": 10
+  },
+  "level": {
+    "lives": 3,
+    "leak_damage": {
+      "normal": 1,
+      "miniboss": 2,
+      "boss": 3
+    },
+    "stars_by_lives": {
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3": 3
+    }
+  },
+  "adjacency": "orthogonal",
+  "triangle": {
+    "advantage": 1.15,
+    "disadvantage": 0.85,
+    "beats": {
+      "beast": [
+        "plant",
+        "reptile"
+      ],
+      "bug": [
+        "plant",
+        "reptile"
+      ],
+      "plant": [
+        "aquatic",
+        "bird"
+      ],
+      "reptile": [
+        "aquatic",
+        "bird"
+      ],
+      "aquatic": [
+        "beast",
+        "bug"
+      ],
+      "bird": [
+        "beast",
+        "bug"
+      ]
+    }
+  },
+  "targeting": {
+    "default": "most_advanced_in_range",
+    "priority_status": "feather"
+  },
+  "cells": {
+    "path": {
+      "allowed_lines": [
+        "melee"
+      ],
+      "blocks": true
+    },
+    "plain": {
+      "allowed_lines": [
+        "melee",
+        "ranged"
+      ]
+    },
+    "hill": {
+      "allowed_lines": [
+        "ranged"
+      ],
+      "range_penalty": 1,
+      "auras": false,
+      "max_per_level": 2,
+      "hit_only_by": [
+        "dryad-ranger",
+        "dryad-mage"
+      ]
+    }
+  },
+  "classes": {
+    "beast": {
+      "line": "melee",
+      "cost": 3,
+      "hp": 120,
+      "damage": 40,
+      "rate": 0.6,
+      "range": 1.5,
+      "attack_vfx": "beast_smash",
+      "on_hit_status": null,
+      "self_status": "rage",
+      "aura": "fury"
+    },
+    "aquatic": {
+      "line": "ranged",
+      "cost": 1,
+      "hp": 60,
+      "damage": 8,
+      "rate": 1.2,
+      "range": 2.5,
+      "attack_vfx": "aquatic_projectile",
+      "on_hit_status": "wet",
+      "self_status": null,
+      "aura": "tide"
+    },
+    "plant": {
+      "line": "melee",
+      "cost": 2,
+      "hp": 200,
+      "damage": 12,
+      "rate": 0.8,
+      "range": 1,
+      "attack_vfx": "plant_gore",
+      "on_hit_status": null,
+      "self_status": null,
+      "aura": "roots"
+    },
+    "bird": {
+      "line": "ranged",
+      "cost": 1,
+      "hp": 50,
+      "damage": 10,
+      "rate": 2,
+      "range": 3.5,
+      "attack_vfx": "bird_projectile",
+      "on_hit_status": "feather",
+      "self_status": null,
+      "aura": "wind"
+    },
+    "bug": {
+      "line": "melee",
+      "cost": 2,
+      "hp": 80,
+      "damage": 6,
+      "rate": 1,
+      "range": 1.5,
+      "attack_vfx": "bug_bite",
+      "on_hit_status": "poison",
+      "self_status": null,
+      "aura": "swarm",
+      "ignores_armor": true
+    },
+    "reptile": {
+      "line": "ranged",
+      "cost": 2,
+      "hp": 90,
+      "damage": 15,
+      "rate": 0.8,
+      "range": 2.5,
+      "attack_vfx": "reptile_cast",
+      "on_hit_status": "fragile",
+      "self_status": null,
+      "aura": "scales"
+    }
+  },
+  "auras": {
+    "fury": {
+      "class": "beast",
+      "target": "allies",
+      "effect": "damage_mult_vs_low_hp",
+      "value": 1.3,
+      "hp_threshold": 0.5
+    },
+    "tide": {
+      "class": "aquatic",
+      "target": "allies",
+      "effect": "apply_status_on_hit",
+      "status": "wet"
+    },
+    "roots": {
+      "class": "plant",
+      "target": "enemies",
+      "effect": "speed_mult",
+      "value": 0.6
+    },
+    "wind": {
+      "class": "bird",
+      "target": "allies",
+      "effect": "range_add",
+      "value": 1
+    },
+    "swarm": {
+      "class": "bug",
+      "target": "allies",
+      "effect": "dot_tick_mult",
+      "value": 2
+    },
+    "scales": {
+      "class": "reptile",
+      "target": "enemies",
+      "effect": "armor_add",
+      "value": -15
+    },
+    "anti_stack": "same_class_neighbors_give_one_instance_strongest"
+  },
+  "statuses": {
+    "wet": {
+      "duration": 4,
+      "effect": "damage_taken_mult",
+      "value": 1.2,
+      "vfx": "bubble",
+      "icon": "bubble"
+    },
+    "roots": {
+      "duration": null,
+      "effect": "speed_mult",
+      "value": 0.6,
+      "vfx": "leaf",
+      "icon": "leaf",
+      "note": "while on a cell adjacent to a plant"
+    },
+    "blocked": {
+      "duration": null,
+      "effect": "stop_and_attack_blocker",
+      "vfx": "taunt",
+      "note": "while the blocker stands"
+    },
+    "feather": {
+      "duration": 3,
+      "effect": "priority_target",
+      "vfx": "feather",
+      "icon": "feather"
+    },
+    "poison": {
+      "duration": 4,
+      "effect": "dot",
+      "dps": 4,
+      "ignores_armor": true,
+      "refresh_on_reapply": true,
+      "vfx": "poison_apply",
+      "icon": "poison"
+    },
+    "bleed": {
+      "duration": 3,
+      "effect": "dot",
+      "dps": 6,
+      "applied_when": "bug_hits_poisoned_target",
+      "vfx": "bleed_apply",
+      "icon": "bleed"
+    },
+    "fragile": {
+      "duration": 5,
+      "effect": "armor_mult",
+      "value": 0.5,
+      "vfx": "fragile",
+      "icon": "fragile"
+    },
+    "rage": {
+      "duration": "wave",
+      "effect": "rate_mult_per_stack",
+      "value": 1.1,
+      "max_stacks": 5,
+      "gain_on": "kill",
+      "vfx": "rage",
+      "icon": "rage"
+    }
+  },
+  "reactions": {
+    "ricochet": {
+      "trigger": {
+        "attacker": "bird",
+        "target_has": "wet"
+      },
+      "effect": "bounce",
+      "max_targets": 2,
+      "radius": 1.5,
+      "damage_mult": 0.5,
+      "spread_wet_if_neighbor": "aquatic"
+    },
+    "rooting": {
+      "trigger": {
+        "attacker": "bug",
+        "target_has": "roots"
+      },
+      "effect": "dot_duration_mult",
+      "value": 2
+    },
+    "shatter": {
+      "trigger": {
+        "attacker": "beast",
+        "target_has": "fragile"
+      },
+      "effect": "crit",
+      "damage_mult": 2
+    },
+    "burst": {
+      "trigger": {
+        "attacker": "beast",
+        "kills_target_with": "bleed"
+      },
+      "effect": "aoe",
+      "damage": 30,
+      "radius": 1
+    }
+  },
+  "parts_bonus": {
+    "beast": {
+      "damage": 0.06
+    },
+    "bug": {
+      "damage": 0.03,
+      "rate": 0.03
+    },
+    "bird": {
+      "rate": 0.06
+    },
+    "aquatic": {
+      "rate": 0.03,
+      "hp": 0.03
+    },
+    "plant": {
+      "hp": 0.06
+    },
+    "reptile": {
+      "hp": 0.04,
+      "damage": 0.02
+    }
+  },
+  "profile_rules": {
+    "min_dominant": 0.15,
+    "tie_margin": 0.03,
+    "labels": {
+      "damage": "DPS",
+      "rate": "Rapide",
+      "hp": "Tank",
+      "none": "Hybride"
+    }
+  },
+  "ko": {
+    "removed_until": "end_of_wave",
+    "returns": "full_hp_free"
+  },
+  "enemy_rules": {
+    "melee_stops_only_for_blocker": true,
+    "ranged_shoots_while_walking": true,
+    "plain_never_hit_by_melee": true,
+    "queue_one_per_cell": true,
+    "heal_between_waves": "axies_full"
+  },
+  "enemies": {
+    "slime": {
+      "class": "plant",
+      "hp": 40,
+      "speed": 1,
+      "armor": 0,
+      "melee_dps": 4,
+      "tier": "normal"
+    },
+    "slime-forest-a": {
+      "class": "plant",
+      "hp": 60,
+      "speed": 1,
+      "armor": 0,
+      "melee_dps": 5,
+      "tier": "normal"
+    },
+    "slime-forest-b": {
+      "class": "plant",
+      "hp": 30,
+      "speed": 1.4,
+      "armor": 0,
+      "melee_dps": 3,
+      "tier": "normal"
+    },
+    "slime-attack": {
+      "class": "aquatic",
+      "hp": 50,
+      "speed": 1,
+      "armor": 0,
+      "melee_dps": 6,
+      "tier": "normal",
+      "ranged": {
+        "range": 2,
+        "period": 2,
+        "damage": 10,
+        "hits_hill": false
+      }
+    },
+    "slime-defense": {
+      "class": "aquatic",
+      "hp": 90,
+      "speed": 0.8,
+      "armor": 0.3,
+      "melee_dps": 4,
+      "tier": "normal"
+    },
+    "slime-support": {
+      "class": "aquatic",
+      "hp": 50,
+      "speed": 1,
+      "armor": 0,
+      "melee_dps": 2,
+      "tier": "normal",
+      "heal": {
+        "radius": 1,
+        "hps": 5
+      }
+    },
+    "slime-fusion": {
+      "class": "aquatic",
+      "hp": 250,
+      "speed": 0.7,
+      "armor": 0.1,
+      "melee_dps": 10,
+      "tier": "miniboss",
+      "on_death_spawn": {
+        "enemy": "slime",
+        "count": 2
+      }
+    },
+    "wolf-gray": {
+      "class": "beast",
+      "hp": 60,
+      "speed": 2,
+      "armor": 0.1,
+      "melee_dps": 8,
+      "tier": "normal"
+    },
+    "wolf-alpha": {
+      "class": "beast",
+      "hp": 150,
+      "speed": 1.8,
+      "armor": 0.1,
+      "melee_dps": 14,
+      "tier": "normal",
+      "leader": {
+        "radius": 2,
+        "speed_mult": 1.2,
+        "affects": [
+          "wolf-gray",
+          "wolf-aquatic",
+          "werewolf"
+        ]
+      }
+    },
+    "wolf-aquatic": {
+      "class": "aquatic",
+      "hp": 70,
+      "speed": 1.8,
+      "armor": 0.2,
+      "melee_dps": 8,
+      "tier": "normal"
+    },
+    "wolf-aquatic-alpha": {
+      "class": "aquatic",
+      "hp": 180,
+      "speed": 1.6,
+      "armor": 0.2,
+      "melee_dps": 14,
+      "tier": "miniboss",
+      "leader": {
+        "radius": 2,
+        "speed_mult": 1.2,
+        "affects": [
+          "wolf-gray",
+          "wolf-aquatic"
+        ]
+      }
+    },
+    "werewolf": {
+      "class": "beast",
+      "hp": 400,
+      "speed": 1.4,
+      "armor": 0.2,
+      "melee_dps": 25,
+      "tier": "miniboss",
+      "enrage": {
+        "hp_below": 0.5,
+        "speed_mult": 1.5,
+        "vfx": "fury_form"
+      }
+    },
+    "treant": {
+      "class": "plant",
+      "hp": 300,
+      "speed": 0.5,
+      "armor": 0.4,
+      "melee_dps": 10,
+      "tier": "normal"
+    },
+    "treant-fighter": {
+      "class": "plant",
+      "hp": 350,
+      "speed": 0.6,
+      "armor": 0.4,
+      "melee_dps": 30,
+      "tier": "miniboss",
+      "line_breaker": true
+    },
+    "treant-flowering": {
+      "class": "plant",
+      "hp": 250,
+      "speed": 0.5,
+      "armor": 0.3,
+      "melee_dps": 6,
+      "tier": "normal",
+      "heal": {
+        "radius": 1.5,
+        "hps": 8
+      }
+    },
+    "dryad-fighter": {
+      "class": "reptile",
+      "hp": 120,
+      "speed": 1.2,
+      "armor": 0.2,
+      "melee_dps": 15,
+      "tier": "normal"
+    },
+    "dryad-ranger": {
+      "class": "bird",
+      "hp": 80,
+      "speed": 1.2,
+      "armor": 0,
+      "melee_dps": 4,
+      "tier": "normal",
+      "ranged": {
+        "range": 2.5,
+        "period": 1.5,
+        "damage": 12,
+        "hits_hill": true
+      }
+    },
+    "dryad-mage": {
+      "class": "bird",
+      "hp": 100,
+      "speed": 1,
+      "armor": 0,
+      "melee_dps": 4,
+      "tier": "normal",
+      "aoe": {
+        "radius": 1,
+        "period": 3,
+        "damage": 15,
+        "hits_hill": true
+      }
+    },
+    "bear-dad": {
+      "class": "beast",
+      "hp": 1200,
+      "speed": 0.7,
+      "armor": 0.3,
+      "melee_dps": 40,
+      "tier": "boss",
+      "enrage": {
+        "hp_below": 0.5,
+        "speed_mult": 1.3,
+        "vfx": "rage"
+      }
+    },
+    "bear-mom": {
+      "class": "beast",
+      "hp": 1000,
+      "speed": 0.8,
+      "armor": 0.2,
+      "melee_dps": 30,
+      "tier": "boss",
+      "line_breaker": true,
+      "heal": {
+        "radius": 2,
+        "hps": 10,
+        "only": [
+          "bear-dad"
+        ]
+      }
+    }
+  }
+}
