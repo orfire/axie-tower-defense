@@ -22,6 +22,28 @@ describe('réactions en chaîne', () => {
     expect(w.events.some((e) => e.k === 'reaction' && e.id === 'ricochet')).toBe(true)
   })
 
+  it('ne ricoche que sur deux cibles, les plus avancées', () => {
+    // Sans ce test, ni le plafond de deux ni l'ordre de sélection ne sont couverts :
+    // les autres tests de ricochet n'ont qu'un seul voisin à portée.
+    const w = createWorld(1)
+    const momo = placeTestAxie(w, 'momo', [3, 3])
+    recomputeAuras(w)
+    startWave(w)
+    const main = makeEnemy(w, 'slime'); main.d = 3
+    const far = makeEnemy(w, 'slime'); far.d = 2 // à 1 case, dans le rayon de 1,5
+    const near = makeEnemy(w, 'slime'); near.d = 3.2
+    const nearest = makeEnemy(w, 'slime'); nearest.d = 3.4
+    w.enemies.push(main, far, near, nearest)
+    applyStatus(w, main, 'wet')
+
+    axieAttack(w, momo, main)
+
+    // Les deux plus avancées prennent le rebond, la troisième est épargnée.
+    expect(nearest.hp).toBeLessThan(nearest.maxHp)
+    expect(near.hp).toBeLessThan(near.maxHp)
+    expect(far.hp).toBe(far.maxHp)
+  })
+
   it('ne ricoche pas sur une cible sèche', () => {
     const w = createWorld(1)
     const momo = placeTestAxie(w, 'momo', [3, 3])
