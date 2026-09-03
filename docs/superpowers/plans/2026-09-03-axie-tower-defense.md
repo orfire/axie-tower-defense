@@ -76,7 +76,7 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
 
 **Interfaces :**
 - Consomme : rien.
-- Produit : un projet Vite qui démarre, `npm test` qui passe, et `public/spine/`, `public/vfx/`, `public/sfx/` remplis et sous 15 Mo au total.
+- Produit : un projet Vite qui démarre, `npm test` qui passe, et `public/spine/`, `public/vfx/`, `public/sfx/` remplis, sous 25 Mo au total.
 
 **Pourquoi ce pipeline.** Les sources brutes pèsent plus de 80 Mo pour ce dont on a besoin. Trois traitements les ramènent à environ 20 Mo, chacun pour une raison différente :
 
@@ -205,7 +205,7 @@ Pas de `.gitignore` à créer ici : celui de la racine du dépôt couvre déjà 
 // Copie les assets nécessaires depuis les kits officiels vers public/.
 // Les PNG deviennent des WebP et les fichiers .atlas.txt sont réécrits en .atlas.
 // Usage : node tools/copy-assets.mjs
-import { readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
@@ -251,13 +251,30 @@ async function webp(srcPng, outWebp) {
 let bytes = 0
 const size = (p) => (existsSync(p) ? readFileSync(p).length : 0)
 
+// --- vérifications préalables ---
+// Tout ce qui peut manquer est vérifié AVANT d'effacer quoi que ce soit.
+// public/ est versionné : un échec en cours de route laisserait le dépôt
+// avec un arbre d'assets à moitié reconstruit et un manifeste périmé.
+try {
+  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' })
+} catch {
+  throw new Error("ffmpeg est introuvable dans le PATH. Il est nécessaire pour convertir les effets sonores.")
+}
+for (const { src } of spineDirs) {
+  if (!existsSync(src)) throw new Error(`Source Spine absente : ${src}`)
+}
+for (const id of vfxNeeded) {
+  if (!existsSync(join(WEBVFX, 'vfx', id, 'clip.json'))) throw new Error(`Clip VFX absent : ${id}`)
+}
+for (const id of sfxNeeded) {
+  if (!existsSync(join(WEBVFX, 'sfx', `${id}.wav`))) throw new Error(`Son absent : ${id}`)
+}
+
 rmSync(join(PUB, 'spine'), { recursive: true, force: true })
 rmSync(join(PUB, 'vfx'), { recursive: true, force: true })
 rmSync(join(PUB, 'sfx'), { recursive: true, force: true })
 
 for (const { src, out } of spineDirs) {
-  if (!existsSync(src)) throw new Error(`Source Spine absente : ${src}`)
-
   // Les noms de fichiers du kit ne suivent aucune convention : le dossier
   // 03-puffy-aquatic contient 03-puffy-aquatic.json, 01-buba-beast contient buba.json,
   // 07-venoki-reptile contient 07-dps-reptile.json et 04-support-plant contient
@@ -277,7 +294,8 @@ for (const { src, out } of spineDirs) {
   // JSON minifié : le kit livre de l'indenté, ça n'enlève que de l'espacement.
   const skeleton = JSON.parse(readFileSync(join(src, jsonName), 'utf8'))
   writeFileSync(join(out, 'skeleton.json'), JSON.stringify(skeleton))
-  writeFileSync(join(out, 'skeleton.atlas'), atlasText.replace(pngName, 'skeleton.webp'))
+  // replaceAll : un atlas multi-pages référencerait la même image plusieurs fois.
+  writeFileSync(join(out, 'skeleton.atlas'), atlasText.replaceAll(pngName, 'skeleton.webp'))
   await webp(join(src, pngName), join(out, 'skeleton.webp'))
   bytes += size(join(out, 'skeleton.json')) + size(join(out, 'skeleton.atlas')) + size(join(out, 'skeleton.webp'))
 }
@@ -294,12 +312,6 @@ for (const id of vfxNeeded) {
 
 // Audio : des effets courts, en PCM non compressé dans le kit. Le MP3 mono à 96 kb/s
 // suffit et se lit partout, y compris sur Safari qui gère mal l'OGG.
-try {
-  execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' })
-} catch {
-  throw new Error("ffmpeg est introuvable dans le PATH. Il est nécessaire pour convertir les effets sonores.")
-}
-
 mkdirSync(join(PUB, 'sfx'), { recursive: true })
 for (const id of sfxNeeded) {
   const out = join(PUB, 'sfx', `${id}.mp3`)
