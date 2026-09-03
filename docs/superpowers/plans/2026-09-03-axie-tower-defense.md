@@ -3162,10 +3162,34 @@ describe('déterminisme', () => {
     expect(w.enemies[0].d).toBeCloseTo(1, 6)
   })
 
+  it('frappe le bloqueur dès le tick où le blocage s’établit', () => {
+    // C'EST ce test qui est sensible à l'ordre entre moveEnemies, qui pose
+    // blockedBy, et enemyActions, qui le consomme. Dans le bon ordre, le tout
+    // premier tick de blocage inflige déjà des dégâts. Si enemyActions passait
+    // avant moveEnemies, il lirait un blockedBy encore vide et les dégâts
+    // n'arriveraient qu'au tick suivant.
+    // Mesurer une seconde en régime établi ne le détecte pas : une fois le
+    // blocage installé, le drapeau vaut la même chose dans les deux ordres et le
+    // décalage d'un tick disparaît dans la somme.
+    const w = createWorld(1)
+    const olek = place(w, 'olek', w.level.path[6])!
+    startWave(w)
+
+    let hpAvant = olek.hp
+    let ticks = 0
+    while (ticks < Math.round(20 / DT) && !w.enemies.some((e) => e.blockedBy === olek.uid)) {
+      hpAvant = olek.hp
+      step(w)
+      ticks++
+    }
+    expect(w.enemies.some((e) => e.blockedBy === olek.uid), 'aucun blocage en 20 s').toBe(true)
+    // Le slime inflige 4 dégâts par seconde, soit 4 × DT sur ce seul tick.
+    expect(hpAvant - olek.hp).toBeCloseTo(4 * DT, 6)
+  })
+
   it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
-    // Sensible à l'ordre entre moveEnemies, qui pose blockedBy, et enemyActions,
-    // qui le consomme dans le même tick. Un slime bloqué inflige 4 dégâts par
-    // seconde à Olek, sans modificateur : Plante contre Plante est neutre.
+    // Contrôle de valeur, pas d'ordre : un slime bloqué retire 4 PV par seconde
+    // à Olek, sans modificateur, Plante contre Plante étant neutre.
     const w = createWorld(1)
     const olek = place(w, 'olek', w.level.path[6])!
     startWave(w)
@@ -3226,7 +3250,7 @@ function simSources(): [string, string][] {
 cd axie-td && npx vitest run tests/sim/placement.test.ts tests/sim/game.test.ts
 ```
 
-Attendu : 18 tests passent, soit 95 avec les 77 des tâches précédentes.
+Attendu : 19 tests passent, soit 96 avec les 77 des tâches précédentes.
 
 Si « gagne le niveau 1 » échoue, la formation de référence est trop faible. Renforcer en ajoutant `place(w, 'puffy', ...)` sur une case voisine libre, et reporter la même formation dans `tools/balance-run.mjs` à la tâche 21. Si à l'inverse « perd le niveau » échoue parce que le joueur survit sans rien poser, le niveau 1 est trop facile : le signaler dans le rapport de tâche, c'est une décision d'équilibrage pour Edouard, pas une correction à faire seul.
 
