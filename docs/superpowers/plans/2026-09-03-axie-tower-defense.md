@@ -2284,6 +2284,25 @@ describe('réactions en chaîne', () => {
     expect(hasStatus(e, 'wet')).toBe(true)
   })
 
+  it('empoisonne au premier coup, saigne au second', () => {
+    // GDD §6.1 : Saignement vise « une cible déjà empoisonnée ». Le premier coup
+    // ne doit donc pas cumuler les deux, sinon l'Insecte ouvre à 10 dégâts par
+    // seconde au lieu de 4 et la montée en puissance disparaît.
+    const w = createWorld(1)
+    const pomo = placeTestAxie(w, 'pomodoro', [3, 3])
+    recomputeAuras(w)
+    startWave(w)
+    const e = makeEnemy(w, 'treant'); e.d = 3 // assez de PV pour encaisser deux coups
+    w.enemies.push(e)
+
+    axieAttack(w, pomo, e)
+    expect(hasStatus(e, 'poison')).toBe(true)
+    expect(hasStatus(e, 'bleed')).toBe(false)
+
+    axieAttack(w, pomo, e)
+    expect(hasStatus(e, 'bleed')).toBe(true)
+  })
+
   it('donne une charge de Rage à la Bête qui tue', () => {
     const w = createWorld(1)
     const buba = placeTestAxie(w, 'buba', [3, 3])
@@ -2365,11 +2384,12 @@ const MAX_RAGE = BALANCE.statuses.rage.max_stacks ?? 5
 export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
   if (a.ko || !target.alive) return
 
-  // On lit les statuts avant de frapper : une réaction dépend de l'état d'avant.
+  // On lit les statuts avant de frapper : plusieurs effets dépendent de l'état d'avant.
   const wasWet = hasStatus(target, 'wet')
   const wasRooted = hasStatus(target, 'roots')
   const wasFragile = hasStatus(target, 'fragile')
   const wasBleeding = hasStatus(target, 'bleed')
+  const wasPoisoned = hasStatus(target, 'poison')
 
   let damage = a.eff.damage
 
@@ -2402,8 +2422,12 @@ export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
 
   if (!died && cls.on_hit_status) {
     applyStatus(w, target, cls.on_hit_status, { tickMult: a.eff.swarm, durationMult })
-    // L'Insecte pose Saignement dès que la cible est empoisonnée.
-    if (a.cls === 'bug') applyStatus(w, target, 'bleed', { tickMult: a.eff.swarm, durationMult })
+    // Saignement seulement si la cible était DÉJÀ empoisonnée avant ce coup (GDD §6.1).
+    // Le premier coup d'Insecte empoisonne, les suivants ajoutent le saignement :
+    // 4 dégâts par seconde puis 10, et non 10 d'emblée.
+    if (a.cls === 'bug' && wasPoisoned) {
+      applyStatus(w, target, 'bleed', { tickMult: a.eff.swarm, durationMult })
+    }
   }
   // Marée : un voisin Aquatique trempe les cibles touchées.
   if (!died && a.eff.tide) applyStatus(w, target, 'wet')
@@ -2440,7 +2464,7 @@ export function axieActions(w: World): void {
 cd axie-td && npx vitest run tests/sim/reactions.test.ts
 ```
 
-Attendu : 7 tests passent. Si la durée du poison vaut 4 au lieu de 8, `durationMult` n'arrive pas jusqu'à `applyStatus`.
+Attendu : 8 tests passent, soit 66 avec les 58 des tâches précédentes. Si la durée du poison vaut 4 au lieu de 8, `durationMult` n'arrive pas jusqu'à `applyStatus`.
 
 - [ ] **Étape 6 : Commiter**
 
