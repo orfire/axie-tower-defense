@@ -1,18 +1,19 @@
-import { BALANCE, axieDef } from '../data/load'
+import { BALANCE } from '../data/load'
 import type { ClassId } from '../data/types'
 import { isOrthAdjacent } from './grid'
 import type { AxieUnit } from './types'
 import type { World } from './world'
 
-/** Force d'un Axie comme source d'aura : somme de ses bonus de parts. */
-function auraStrength(a: AxieUnit): number {
-  const b = axieDef(a.axieId).bonuses
-  return b.hp + b.damage + b.rate
-}
-
 /**
- * Voisins qui donnent effectivement une aura : un seul par classe, le plus fort.
+ * Voisins qui donnent effectivement une aura : un seul par classe.
  * Un Axie sur colline ne reçoit rien et ne donne rien.
+ *
+ * Le GDD §5.3 parle de retenir « la plus forte » des auras d'une même classe.
+ * En v1 cette formulation n'a pas d'effet : la valeur d'une aura est fixée par la
+ * classe, pas par l'Axie qui la porte, donc deux voisins de même classe donnent
+ * exactement le même bonus. Le départage sert uniquement au déterminisme, et il se
+ * fait sur le plus petit uid. Le jour où une aura variera selon le porteur, c'est
+ * ici qu'il faudra comparer la statistique concernée.
  */
 export function auraSources(w: World, a: AxieUnit): AxieUnit[] {
   if (a.ko || a.kind === 'hill') return []
@@ -21,10 +22,7 @@ export function auraSources(w: World, a: AxieUnit): AxieUnit[] {
     if (other.uid === a.uid || other.ko || other.kind === 'hill') continue
     if (!isOrthAdjacent(a.cell, other.cell)) continue
     const cur = best.get(other.cls)
-    if (!cur) { best.set(other.cls, other); continue }
-    const sc = auraStrength(cur)
-    const so = auraStrength(other)
-    if (so > sc || (so === sc && other.uid < cur.uid)) best.set(other.cls, other)
+    if (!cur || other.uid < cur.uid) best.set(other.cls, other)
   }
   return [...best.values()].sort((x, y) => x.uid - y.uid)
 }
@@ -50,9 +48,17 @@ export function recomputeAuras(w: World): void {
         case 'beast': eff.fury = BALANCE.auras.fury.value ?? 1.3; break
         case 'aquatic': eff.tide = true; break
         case 'bug': eff.swarm = BALANCE.auras.swarm.value ?? 2; break
-        // Plante (Racines) et Reptile (Écailles) visent les ennemis :
-        // traitées dans refreshRoots et effectiveArmor.
-        default: break
+        case 'plant':
+        case 'reptile':
+          // Racines et Écailles visent les ennemis : traitées dans refreshRoots
+          // et effectiveArmor, jamais ici.
+          break
+        default: {
+          // Une septième classe ajoutée sans aura échouerait à la compilation
+          // plutôt que de ne rien faire en silence.
+          const unhandled: never = src.cls
+          throw new Error(`Classe sans aura déclarée : ${String(unhandled)}`)
+        }
       }
     }
 

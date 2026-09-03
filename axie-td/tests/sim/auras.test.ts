@@ -28,6 +28,21 @@ describe('auras', () => {
     placeTestAxie(w, 'dps-bird', [2, 3])
     recomputeAuras(w)
     expect(puffy.eff.range).toBeCloseTo(puffy.baseRange + 1) // +1, pas +2
+    // Une seule source Oiseau retenue, pas deux.
+    expect(auraSources(w, puffy).filter((s) => s.cls === 'bird')).toHaveLength(1)
+  })
+
+  it('départage deux voisins de même classe par le plus petit uid', () => {
+    // La valeur d'une aura ne dépend pas de son porteur, donc eff serait identique
+    // dans les deux cas : seul auraSources révèle qui a été retenu. Sans départage
+    // stable, le liseré affiché changerait d'un chargement à l'autre.
+    const w = createWorld(1)
+    const puffy = placeTestAxie(w, 'puffy', [3, 3])
+    const first = placeTestAxie(w, 'momo', [3, 4])
+    const second = placeTestAxie(w, 'dps-bird', [2, 3])
+    expect(second.uid).toBeGreaterThan(first.uid)
+    recomputeAuras(w)
+    expect(auraSources(w, puffy).find((s) => s.cls === 'bird')!.uid).toBe(first.uid)
   })
 
   it('cumule deux auras de classes différentes', () => {
