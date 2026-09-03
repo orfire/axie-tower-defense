@@ -100,7 +100,7 @@ const balance = {
     'treant-flowering':   { class: 'plant',   hp: 250,  speed: 0.5, armor: 0.30, melee_dps: 6,  tier: 'normal', heal: { radius: 1.5, hps: 8 } },
     'dryad-fighter':      { class: 'reptile', hp: 120,  speed: 1.2, armor: 0.20, melee_dps: 15, tier: 'normal' },
     'dryad-ranger':       { class: 'bird',    hp: 80,   speed: 1.2, armor: 0,    melee_dps: 4,  tier: 'normal', ranged: { range: 2.5, period: 1.5, damage: 12, hits_hill: true } },
-    'dryad-mage':         { class: 'bird',    hp: 100,  speed: 1.0, armor: 0,    melee_dps: 4,  tier: 'normal', aoe: { radius: 1, period: 3, damage: 15, hits_hill: true } },
+    'dryad-mage':         { class: 'bird',    hp: 100,  speed: 1.0, armor: 0,    melee_dps: 4,  tier: 'normal', aoe: { radius: 1.5, period: 3, damage: 15, hits_hill: true } },
     'bear-dad':           { class: 'beast',   hp: 1200, speed: 0.7, armor: 0.30, melee_dps: 40, tier: 'boss', enrage: { hp_below: 0.5, speed_mult: 1.3, vfx: 'rage' } },
     'bear-mom':           { class: 'beast',   hp: 1000, speed: 0.8, armor: 0.20, melee_dps: 30, tier: 'boss', line_breaker: true, heal: { radius: 2, hps: 10, only: ['bear-dad'] } },
   },
@@ -243,7 +243,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 6, name: 'Le cercle des dryades', biome: 'cercle', hills: [[6,1],[0,9]],
+    id: 6, name: 'Le cercle des dryades', biome: 'cercle', hills: [[5,1],[0,9]],
     path: [[3,0],[3,1],[3,2],[2,2],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[5,4],[5,5],[5,6],[4,6],[3,6],[2,6],[1,6],[1,7],[1,8],[2,8],[3,8],[3,9]],
     draft: { forced: null },
     waves: [
@@ -320,9 +320,44 @@ for (const L of LEVELS) {
     }
   }
   if (L.hills.length > balance.cells.hill.max_per_level) errors.push(`L${L.id}: trop de collines`)
+
+  /** Distance minimale entre une case et le chemin, en unités de case. */
+  const distToPath = ([hc, hr]) => {
+    let best = Infinity
+    for (let d = 0; d <= L.path.length - 1; d += 0.05) {
+      const i = Math.min(Math.floor(d), L.path.length - 1)
+      const t = d - i
+      const a = L.path[i]
+      const b = L.path[Math.min(i + 1, L.path.length - 1)]
+      const x = (a[0] + 0.5) + ((b[0] + 0.5) - (a[0] + 0.5)) * t
+      const y = (a[1] + 0.5) + ((b[1] + 0.5) - (a[1] + 0.5)) * t
+      best = Math.min(best, Math.hypot(x - (hc + 0.5), y - (hr + 0.5)))
+    }
+    return best
+  }
+
+  /** Portée maximale d'une chimère contre une colline, 0 si elle ne peut pas. */
+  const hillReach = (type) => {
+    const e = balance.enemies[type]
+    if (!e) return 0
+    const r = e.ranged?.hits_hill ? e.ranged.range : 0
+    const a = e.aoe?.hits_hill ? e.aoe.radius : 0
+    return Math.max(r, a)
+  }
+
+  const bestReach = Math.max(0, ...[...new Set(L.waves.flatMap(w => w.spawns.map(s => s.enemy)))].map(hillReach))
+
   for (const [c, r] of L.hills) {
     if (set.has(key(c, r))) errors.push(`L${L.id}: colline sur le chemin ${c},${r}`)
     for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) if (set.has(key(c + dc, r + dr))) errors.push(`L${L.id}: colline adjacente au chemin ${c},${r}`)
+    // Un niveau qui aligne des chimères capables de viser les collines doit avoir
+    // au moins une colline à leur portée, sinon leur menace est décorative.
+    // Un niveau sans ces chimères a des collines sûres, et c'est voulu : le prix
+    // de la colline reste la portée perdue et l'absence d'aura (GDD §4, §10.1).
+    const d = distToPath([c, r])
+    if (bestReach > 0 && d > bestReach) {
+      errors.push(`L${L.id}: colline ${c},${r} hors d'atteinte des chimères du niveau — à ${d.toFixed(2)} du chemin, portée max ${bestReach}`)
+    }
   }
   const budgets = L.waves.map(w => w.budget)
   if (JSON.stringify(budgets) !== JSON.stringify(GDD_BUDGETS[L.id])) errors.push(`L${L.id}: budgets ${budgets} ≠ GDD ${GDD_BUDGETS[L.id]}`)

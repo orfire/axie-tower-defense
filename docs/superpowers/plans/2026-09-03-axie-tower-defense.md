@@ -2519,7 +2519,18 @@ import { enemyActions, resolveDeaths } from '../../src/sim/enemies'
 import { DT } from '../../src/sim/types'
 import { placeTestAxie } from './helpers'
 
-const near = (c: readonly [number, number]): [number, number] => [c[0] + 1, c[1]]
+/**
+ * Premier voisin orthogonal en plaine d'une case de chemin.
+ * Un décalage fixe ne convient pas : selon le niveau, le voisin de droite d'une
+ * case de chemin est lui-même sur le chemin, et l'Axie ne serait plus en plaine.
+ */
+function nearPlain(w: ReturnType<typeof createWorld>, cell: readonly [number, number]): [number, number] {
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n: [number, number] = [cell[0] + dc, cell[1] + dr]
+    if (w.board.kindAt(n) === 'plain') return n
+  }
+  throw new Error(`Aucun voisin en plaine pour ${cell}`)
+}
 
 describe('chimères', () => {
   it('fait frapper le bloqueur par l’ennemi bloqué', () => {
@@ -2534,7 +2545,7 @@ describe('chimères', () => {
   it('épargne les Axies en plaine de toute mêlée', () => {
     const w = createWorld(1)
     const olek = placeTestAxie(w, 'olek', w.level.path[6])
-    const puffy = placeTestAxie(w, 'puffy', near(w.level.path[6]))
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[6]))
     startWave(w)
     const e = makeEnemy(w, 'slime'); e.d = 4; w.enemies.push(e)
     for (let i = 0; i < 120; i++) { w.t += DT; moveEnemies(w); enemyActions(w) }
@@ -2544,7 +2555,7 @@ describe('chimères', () => {
 
   it('fait tirer slime-attack sur un Axie à portée', () => {
     const w = createWorld(4)
-    const puffy = placeTestAxie(w, 'puffy', near(w.level.path[3]))
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[3]))
     startWave(w)
     const e = makeEnemy(w, 'slime-attack'); e.d = 3; w.enemies.push(e)
     for (let i = 0; i < 90; i++) { w.t += DT; enemyActions(w) }
@@ -2552,6 +2563,8 @@ describe('chimères', () => {
   })
 
   it('empêche slime-attack d’atteindre une colline', () => {
+    // On sème un tireur sur chaque case du chemin : aucun ne doit toucher la colline,
+    // quelle que soit sa position, puisque hits_hill vaut faux pour ce type.
     const w = createWorld(4)
     const momo = placeTestAxie(w, 'momo', w.level.hills[0])
     startWave(w)
@@ -2562,13 +2575,27 @@ describe('chimères', () => {
     expect(momo.hp).toBe(momo.maxHp)
   })
 
-  it('laisse dryad-mage atteindre une colline', () => {
+  it('touche en revanche un Axie en plaine, à portée', () => {
+    // Contrôle que le test précédent prouve bien l'exclusion des collines
+    // et non simplement que le tireur ne touche jamais rien.
+    const w = createWorld(4)
+    const puffy = placeTestAxie(w, 'puffy', nearPlain(w, w.level.path[3]))
+    startWave(w)
+    const e = makeEnemy(w, 'slime-attack'); e.d = 3; w.enemies.push(e)
+    for (let i = 0; i < 120; i++) { w.t += DT; enemyActions(w) }
+    expect(puffy.hp).toBeLessThan(puffy.maxHp)
+  })
+
+  it('laisse dryad-mage atteindre la colline la plus proche du chemin', () => {
+    // Le rayon du mage vaut 1,5 et la colline la plus proche du chemin est à 1,414
+    // au niveau 6. C'est le seul cas où sa menace anti-colline peut se matérialiser,
+    // et tools/gen-data.mjs vérifie que chaque niveau à dryades en offre au moins un.
     const w = createWorld(6)
-    const hill = w.level.hills[0]
+    const { hill, d } = closestHill(w)
     const momo = placeTestAxie(w, 'momo', hill)
     startWave(w)
     const e = makeEnemy(w, 'dryad-mage')
-    e.d = nearestIndex(w, hill)
+    e.d = d
     w.enemies.push(e)
     for (let i = 0; i < 200; i++) { w.t += DT; enemyActions(w) }
     expect(momo.hp).toBeLessThan(momo.maxHp)
@@ -2618,14 +2645,19 @@ describe('chimères', () => {
   })
 })
 
-/** Index du chemin le plus proche d'une case, pour placer un tireur à portée. */
-function nearestIndex(w: ReturnType<typeof createWorld>, cell: readonly [number, number]): number {
-  let best = 0
-  let bestD = Infinity
-  for (let i = 0; i < w.board.length; i++) {
-    const p = w.board.posAt(i)
-    const d = Math.hypot(p.x - (cell[0] + 0.5), p.y - (cell[1] + 0.5))
-    if (d < bestD) { bestD = d; best = i }
+/**
+ * Colline la plus proche du chemin, et la progression `d` qui l'approche au mieux.
+ * Recherche fine, pas seulement sur les index entiers : un tireur se place aussi
+ * entre deux cases.
+ */
+function closestHill(w: ReturnType<typeof createWorld>) {
+  let best = { hill: w.level.hills[0], d: 0, dist: Infinity }
+  for (const hill of w.level.hills) {
+    for (let d = 0; d <= w.board.length - 1; d += 0.05) {
+      const p = w.board.posAt(d)
+      const dist = Math.hypot(p.x - (hill[0] + 0.5), p.y - (hill[1] + 0.5))
+      if (dist < best.dist) best = { hill, d, dist }
+    }
   }
   return best
 }
@@ -2735,7 +2767,7 @@ export function resolveDeaths(w: World): void {
 cd axie-td && npx vitest run tests/sim/enemies.test.ts
 ```
 
-Attendu : 9 tests passent. Si le test du mage sur colline échoue, c'est que la colline est hors de son rayon d'une case depuis le chemin : prendre la seconde colline du niveau 6, `w.level.hills[1]`.
+Attendu : 10 tests passent, soit 77 avec les 67 des tâches précédentes.
 
 - [ ] **Étape 6 : Lancer toute la suite pour vérifier la non-régression**
 
@@ -3026,7 +3058,14 @@ import { makeEnemy } from '../../src/sim/spawn'
 import { place } from '../../src/sim/placement'
 import { DT } from '../../src/sim/types'
 
-const near = (c: readonly [number, number]): [number, number] => [c[0] + 1, c[1]]
+/** Premier voisin orthogonal en plaine d'une case de chemin. */
+function nearPlain(w: ReturnType<typeof createWorld>, cell: readonly [number, number]): [number, number] {
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n: [number, number] = [cell[0] + dc, cell[1] + dr]
+    if (w.board.kindAt(n) === 'plain') return n
+  }
+  throw new Error(`Aucun voisin en plaine pour ${cell}`)
+}
 
 describe('étoiles', () => {
   it('convertit les PV restants en étoiles', () => {
@@ -3058,7 +3097,7 @@ describe('vague', () => {
   it('se termine quand tous les ennemis sont morts ou sortis', () => {
     const w = createWorld(1)
     place(w, 'olek', w.level.path[6])
-    place(w, 'momo', near(w.level.path[6]))
+    place(w, 'momo', nearPlain(w, w.level.path[6]))
     runWave(w)
     expect(w.phase).toBe('placement')
     expect(w.waveIndex).toBe(1)
@@ -3078,7 +3117,7 @@ describe('vague', () => {
   it('gagne le niveau 1 avec une formation de référence', () => {
     const w = createWorld(1)
     place(w, 'olek', w.level.path[6])
-    place(w, 'momo', near(w.level.path[6]))
+    place(w, 'momo', nearPlain(w, w.level.path[6]))
     while (w.phase === 'placement') runWave(w)
     expect(w.phase).toBe('won')
     expect(w.lives).toBeGreaterThan(0)
@@ -3090,7 +3129,7 @@ describe('déterminisme', () => {
     const run = () => {
       const w = createWorld(3)
       place(w, 'olek', w.level.path[8])
-      place(w, 'momo', near(w.level.path[8]))
+      place(w, 'momo', nearPlain(w, w.level.path[8]))
       while (w.phase === 'placement' && w.waveIndex < 3) runWave(w)
       return { lives: w.lives, wave: w.waveIndex, uid: w.nextUid }
     }
@@ -3121,7 +3160,7 @@ describe('déterminisme', () => {
 cd axie-td && npx vitest run tests/sim/placement.test.ts tests/sim/game.test.ts
 ```
 
-Attendu : 14 tests passent.
+Attendu : 15 tests passent, soit 92 avec les 77 des tâches précédentes.
 
 Si « gagne le niveau 1 » échoue, la formation de référence est trop faible. Renforcer en ajoutant `place(w, 'puffy', ...)` sur une case voisine libre, et reporter la même formation dans `tools/balance-run.mjs` à la tâche 21. Si à l'inverse « perd le niveau » échoue parce que le joueur survit sans rien poser, le niveau 1 est trop facile : le signaler dans le rapport de tâche, c'est une décision d'équilibrage pour Edouard, pas une correction à faire seul.
 

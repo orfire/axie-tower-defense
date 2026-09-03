@@ -535,7 +535,7 @@
       "melee_dps": 4,
       "tier": "normal",
       "aoe": {
-        "radius": 1,
+        "radius": 1.5,
         "period": 3,
         "damage": 15,
         "hits_hill": true
