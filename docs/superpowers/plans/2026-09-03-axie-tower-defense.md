@@ -1519,7 +1519,6 @@ Attendu : ÉCHEC sur l'import de `../../src/sim/combat`.
 - [ ] **Étape 3 : Écrire `src/sim/targeting.ts`**
 
 ```ts
-import { BALANCE } from '../data/load'
 import { center, dist } from './grid'
 import type { AxieUnit, EnemyUnit } from './types'
 import type { World } from './world'
@@ -1570,8 +1569,6 @@ export function enemiesInRadius(w: World, at: { x: number; y: number }, radius: 
     .filter((e) => e.alive && e.uid !== exceptUid && dist(at, w.board.posAt(e.d)) <= radius)
     .sort((a, b) => b.d - a.d || a.uid - b.uid)
 }
-
-export const GRID = BALANCE.grid
 ```
 
 - [ ] **Étape 4 : Écrire `src/sim/combat.ts`**
