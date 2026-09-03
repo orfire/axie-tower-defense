@@ -2213,6 +2213,28 @@ describe('réactions en chaîne', () => {
     expect(w.events.some((e) => e.k === 'reaction' && e.id === 'ricochet')).toBe(true)
   })
 
+  it('ne ricoche que sur deux cibles, les plus avancées', () => {
+    // Sans ce test, ni le plafond de deux ni l'ordre de sélection ne sont couverts :
+    // les autres tests de ricochet n'ont qu'un seul voisin à portée.
+    const w = createWorld(1)
+    const momo = placeTestAxie(w, 'momo', [3, 3])
+    recomputeAuras(w)
+    startWave(w)
+    const main = makeEnemy(w, 'slime'); main.d = 3
+    const far = makeEnemy(w, 'slime'); far.d = 2 // à 1 case, dans le rayon de 1,5
+    const near = makeEnemy(w, 'slime'); near.d = 3.2
+    const nearest = makeEnemy(w, 'slime'); nearest.d = 3.4
+    w.enemies.push(main, far, near, nearest)
+    applyStatus(w, main, 'wet')
+
+    axieAttack(w, momo, main)
+
+    // Les deux plus avancées prennent le rebond, la troisième est épargnée.
+    expect(nearest.hp).toBeLessThan(nearest.maxHp)
+    expect(near.hp).toBeLessThan(near.maxHp)
+    expect(far.hp).toBe(far.maxHp)
+  })
+
   it('ne ricoche pas sur une cible sèche', () => {
     const w = createWorld(1)
     const momo = placeTestAxie(w, 'momo', [3, 3])
@@ -2464,7 +2486,7 @@ export function axieActions(w: World): void {
 cd axie-td && npx vitest run tests/sim/reactions.test.ts
 ```
 
-Attendu : 8 tests passent, soit 66 avec les 58 des tâches précédentes. Si la durée du poison vaut 4 au lieu de 8, `durationMult` n'arrive pas jusqu'à `applyStatus`.
+Attendu : 9 tests passent, soit 67 avec les 58 des tâches précédentes. Si la durée du poison vaut 4 au lieu de 8, `durationMult` n'arrive pas jusqu'à `applyStatus`.
 
 - [ ] **Étape 6 : Commiter**
 
@@ -2999,6 +3021,8 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { createWorld, startWave } from '../../src/sim/world'
 import { runWave, starsFor, step } from '../../src/sim/game'
+import { axieActions } from '../../src/sim/axieActions'
+import { makeEnemy } from '../../src/sim/spawn'
 import { place } from '../../src/sim/placement'
 import { DT } from '../../src/sim/types'
 
@@ -3014,6 +3038,23 @@ describe('étoiles', () => {
 })
 
 describe('vague', () => {
+  it('respecte la cadence d’attaque', () => {
+    // Le cooldown se remet à zéro quand il n'y a pas de cible, mais s'accumule
+    // avec le dépassement quand il y a attaque. Un test de bout en bout passerait
+    // au travers d'une erreur de rythme : on la mesure ici, directement.
+    const w = createWorld(1)
+    const momo = place(w, 'momo', [3, 3])!
+    startWave(w)
+    const e = makeEnemy(w, 'treant') // assez de PV pour encaisser la volée
+    e.d = 3
+    w.enemies.push(e)
+
+    const before = e.hp
+    for (let i = 0; i < Math.round(1 / DT); i++) axieActions(w)
+    const hits = Math.round((before - e.hp) / (momo.eff.damage * 0.85)) // triangle Oiseau < Plante
+    expect(hits).toBe(Math.round(momo.eff.rate)) // 2 coups par seconde
+  })
+
   it('se termine quand tous les ennemis sont morts ou sortis', () => {
     const w = createWorld(1)
     place(w, 'olek', w.level.path[6])
@@ -3080,7 +3121,7 @@ describe('déterminisme', () => {
 cd axie-td && npx vitest run tests/sim/placement.test.ts tests/sim/game.test.ts
 ```
 
-Attendu : 13 tests passent.
+Attendu : 14 tests passent.
 
 Si « gagne le niveau 1 » échoue, la formation de référence est trop faible. Renforcer en ajoutant `place(w, 'puffy', ...)` sur une case voisine libre, et reporter la même formation dans `tools/balance-run.mjs` à la tâche 21. Si à l'inverse « perd le niveau » échoue parce que le joueur survit sans rien poser, le niveau 1 est trop facile : le signaler dans le rapport de tâche, c'est une décision d'équilibrage pour Edouard, pas une correction à faire seul.
 
