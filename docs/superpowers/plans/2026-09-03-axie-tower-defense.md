@@ -12,7 +12,8 @@
 
 Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`design/GDD.md`), qui reste la source de vérité du design.
 
-- **Répertoire de travail : `axie-td/`.** Toutes les commandes s'exécutent depuis là. Il contient déjà `tools/gen-data.mjs` et `data/`.
+- **Répertoire de travail : `axie-td/`.** Toutes les commandes `npm` s'exécutent depuis là. Il contient déjà `tools/gen-data.mjs` et `data/`.
+- **Le dépôt git est à la racine du projet** (`C:/Users/edoua/Documents/Axie_infinity`), pas dans `axie-td/`, et la branche de travail est `round1`. Il suit `axie-td/`, `design/` et `docs/`. Les deux kits d'assets officiels en sont exclus : la charte du concours interdit de les redistribuer. **Ne jamais lancer `git init`**, et lancer les commandes `git` depuis la racine.
 - **Aucun aléa.** `Math.random`, `Date.now`, `performance.now` sont **interdits** dans `src/sim/`. Le temps vient du pas fixe. Un test le vérifie par lecture de fichiers (tâche 11).
 - **Pas fixe : `DT = 1/30` seconde.** Jamais de `deltaTime` variable dans la simulation.
 - **`src/sim/` n'importe jamais depuis `pixi.js`, `pixi-spine`, `src/render/`, `src/ui/`.** Un test le vérifie (tâche 11).
@@ -146,7 +147,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Étape 4 : Créer `index.html`, `src/style.css`, `src/main.ts` et `.gitignore`**
+- [ ] **Étape 4 : Créer `index.html`, `src/style.css` et `src/main.ts`**
 
 `index.html` :
 
@@ -185,17 +186,7 @@ if (!app) throw new Error('#app introuvable')
 app.textContent = 'Axie Tower Defense'
 ```
 
-`.gitignore` :
-
-```
-node_modules
-dist
-public/spine
-public/vfx
-public/sfx
-```
-
-Les assets convertis ne vont pas dans git : ils se régénèrent avec `npm run assets`. Ça garde le dépôt consultable par le jury sans y verser 15 Mo de binaires sous licence Sky Mavis.
+Pas de `.gitignore` à créer ici : celui de la racine du dépôt couvre déjà `node_modules/` et `dist/`. Les assets convertis dans `public/` **sont versionnés**, parce que Vercel construit depuis le dépôt et que les deux kits sources en sont exclus. Leur poids reste sous 15 Mo, plafond vérifié par le test de l'étape 7.
 
 - [ ] **Étape 5 : Écrire `tools/copy-assets.mjs`**
 
@@ -203,7 +194,7 @@ Les assets convertis ne vont pas dans git : ils se régénèrent avec `npm run a
 // Copie les assets nécessaires depuis les kits officiels vers public/.
 // Les PNG deviennent des WebP et les fichiers .atlas.txt sont réécrits en .atlas.
 // Usage : node tools/copy-assets.mjs
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -254,15 +245,26 @@ rmSync(join(PUB, 'sfx'), { recursive: true, force: true })
 
 for (const { src, out } of spineDirs) {
   if (!existsSync(src)) throw new Error(`Source Spine absente : ${src}`)
-  const base = src.split(/[\\/]/).pop().replace(/^\d+-/, '').replace(/-(beast|plant|aquatic|bird|bug|reptile|dusk)$/, '')
-  const names = ['json', 'atlas.txt', 'png'].map((ext) => join(src, `${base}.${ext}`))
-  const [jsonSrc, atlasSrc, pngSrc] = names
-  if (!existsSync(jsonSrc)) throw new Error(`Fichier Spine attendu : ${jsonSrc}`)
+
+  // Les noms de fichiers du kit ne suivent aucune convention : le dossier
+  // 03-puffy-aquatic contient 03-puffy-aquatic.json, 01-buba-beast contient buba.json,
+  // 07-venoki-reptile contient 07-dps-reptile.json et 04-support-plant contient
+  // 04-support-plan.json, avec une faute de frappe. On lit donc le dossier au lieu
+  // de deviner, et on prend le nom de l'image dans l'atlas lui-même.
+  const files = readdirSync(src)
+  const jsonName = files.find((f) => f.endsWith('.json'))
+  const atlasName = files.find((f) => f.endsWith('.atlas.txt'))
+  if (!jsonName || !atlasName) throw new Error(`Fichiers Spine introuvables dans ${src}`)
+
+  const atlasText = readFileSync(join(src, atlasName), 'utf8')
+  // Première ligne non vide de l'atlas : le nom du PNG.
+  const pngName = atlasText.split(/\r?\n/).map((l) => l.trim()).find((l) => l.endsWith('.png'))
+  if (!pngName || !existsSync(join(src, pngName))) throw new Error(`Image introuvable pour ${src} (${pngName})`)
+
   mkdirSync(out, { recursive: true })
-  copyFileSync(jsonSrc, join(out, 'skeleton.json'))
-  const atlas = readFileSync(atlasSrc, 'utf8').replace(`${base}.png`, 'skeleton.webp')
-  writeFileSync(join(out, 'skeleton.atlas'), atlas)
-  await webp(pngSrc, join(out, 'skeleton.webp'))
+  copyFileSync(join(src, jsonName), join(out, 'skeleton.json'))
+  writeFileSync(join(out, 'skeleton.atlas'), atlasText.replace(pngName, 'skeleton.webp'))
+  await webp(join(src, pngName), join(out, 'skeleton.webp'))
   bytes += size(join(out, 'skeleton.json')) + size(join(out, 'skeleton.atlas')) + size(join(out, 'skeleton.webp'))
 }
 
@@ -294,7 +296,7 @@ if (bytes > 15 * 1024 * 1024) {
 }
 ```
 
-Si le nom de base d'un dossier Spine ne correspond pas à la convention (`01-buba-beast` → `buba`), l'erreur `Fichier Spine attendu` le dira nommément. Corriger alors la ligne `base` pour ce dossier plutôt que de deviner.
+Les messages d'erreur nomment le dossier fautif. Si l'un d'eux se déclenche, lister le dossier en cause et adapter la lecture : ne jamais coder en dur un nom de fichier du kit.
 
 - [ ] **Étape 6 : Installer et lancer le pipeline**
 
@@ -355,10 +357,12 @@ cd axie-td && npm run dev
 
 Attendu : Vite écoute sur `http://localhost:5179/`, la page affiche « Axie Tower Defense ». Arrêter avec Ctrl+C.
 
-- [ ] **Étape 10 : Initialiser git et commiter**
+- [ ] **Étape 10 : Commiter**
+
+Le dépôt existe déjà, à la racine du projet, sur la branche `round1`. Ne pas lancer `git init`.
 
 ```bash
-cd axie-td && git init && git add -A && git commit -m "chore: squelette Vite + TypeScript + Vitest et pipeline d'assets"
+cd "C:/Users/edoua/Documents/Axie_infinity" && git add -A && git commit -m "chore: squelette Vite + TypeScript + Vitest et pipeline d'assets"
 ```
 
 ---
@@ -5749,7 +5753,23 @@ Ouvrir l'adresse indiquée dans une fenêtre de navigation privée, en portrait.
 }
 ```
 
-Les assets sont générés au moment du build, puisqu'ils ne sont pas dans git. Cela exige que les deux kits soient présents dans le dépôt déployé. S'ils ne le sont pas, deux options : soit versionner `public/` en retirant les trois lignes du `.gitignore` de la tâche 1, soit publier `dist` déjà construit. **Choisir de versionner `public/`** : c'est plus simple et le poids reste sous 15 Mo. Retirer alors `public/spine`, `public/vfx`, `public/sfx` du `.gitignore` et simplifier `buildCommand` en `npm run build`.
+Les assets de `public/` sont versionnés depuis la tâche 1, donc `buildCommand` se réduit à `npm run build`. Corriger le fichier en ce sens : les deux kits sources ne sont pas dans le dépôt, `npm run assets` ne peut donc pas tourner sur Vercel.
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "headers": [
+    {
+      "source": "/(spine|vfx|sfx)/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
+```
+
+Le projet Vercel doit pointer sur le sous-dossier `axie-td/` comme racine, puisque le dépôt contient aussi `design/` et `docs/`.
 
 - [ ] **Étape 4 : Déployer**
 
