@@ -350,10 +350,13 @@ for (const L of LEVELS) {
   for (const [c, r] of L.hills) {
     if (set.has(key(c, r))) errors.push(`L${L.id}: colline sur le chemin ${c},${r}`)
     for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) if (set.has(key(c + dc, r + dr))) errors.push(`L${L.id}: colline adjacente au chemin ${c},${r}`)
-    // Un niveau qui aligne des chimères capables de viser les collines doit avoir
-    // au moins une colline à leur portée, sinon leur menace est décorative.
-    // Un niveau sans ces chimères a des collines sûres, et c'est voulu : le prix
-    // de la colline reste la portée perdue et l'absence d'aura (GDD §4, §10.1).
+    // Dans un niveau qui aligne des chimères capables de viser les collines,
+    // CHAQUE colline doit être à leur portée. Une seule colline hors d'atteinte
+    // suffirait à rendre les autres sans objet : le joueur s'y installerait et
+    // les tireurs redeviendraient décoratifs. C'est exactement le bug corrigé au
+    // niveau 6, dont la colline était à 3,0 du chemin.
+    // Un niveau sans ces chimères garde des collines sûres, et c'est voulu : leur
+    // prix y reste la portée perdue et l'absence d'aura (GDD §4, §10.1).
     const d = distToPath([c, r])
     if (bestReach > 0 && d > bestReach) {
       errors.push(`L${L.id}: colline ${c},${r} hors d'atteinte des chimères du niveau — à ${d.toFixed(2)} du chemin, portée max ${bestReach}`)
