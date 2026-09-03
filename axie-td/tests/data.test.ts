@@ -49,4 +49,22 @@ describe('données', () => {
       }
     }
   })
+
+  it('déclare toutes les clés du fichier d’équilibrage', () => {
+    // Une clé présente dans balance.json mais absente de l'interface est invisible
+    // pour les 19 tâches suivantes : le compilateur refuserait du code pourtant juste.
+    const declared = [
+      'version', 'gdd', 'sim', 'grid', 'level', 'adjacency', 'triangle', 'targeting',
+      'cells', 'classes', 'auras', 'statuses', 'reactions', 'parts_bonus',
+      'profile_rules', 'ko', 'enemy_rules', 'enemies',
+    ]
+    expect(Object.keys(BALANCE).sort()).toEqual([...declared].sort())
+  })
+
+  it('expose le VFX et l’icône de chaque statut visible', () => {
+    for (const id of ['wet', 'roots', 'feather', 'poison', 'bleed', 'fragile'] as const) {
+      expect(BALANCE.statuses[id].vfx, id).toBeTruthy()
+      expect(BALANCE.statuses[id].icon, id).toBeTruthy()
+    }
+  })
 })
