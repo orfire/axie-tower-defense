@@ -480,8 +480,13 @@ function onLevelEnd(): void {
   nav.unlocked = r.unlocked
   nav.wave = r.wave
   if (r.won) sfx.play(ANIM.level.stars?.sfx)
+  // Le jeton de la partie, pas seulement l'écran courant : quitter pendant le
+  // délai puis relancer un niveau ramène sur `play`, et un minuteur périmé
+  // jetterait le joueur sur le résultat du niveau précédent.
+  const token = playToken
   window.setTimeout(() => {
-    if (router.current === 'play') router.go(r.won ? 'result' : 'defeat')
+    if (token !== playToken || router.current !== 'play') return
+    router.go(r.won ? 'result' : 'defeat')
   }, END_DELAY_MS)
 }
 
