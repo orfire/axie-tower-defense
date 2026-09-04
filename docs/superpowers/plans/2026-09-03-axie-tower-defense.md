@@ -118,9 +118,28 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
     "typescript": "~5.9.2",
     "vite": "^6.3.5",
     "vitest": "^3.2.0"
+  },
+  "//overrides": "pixi-spine 4.0.3 tire ses propres @pixi/*, ce qui met deux copies de Pixi dans la page : le rendu Spine casse et le chargeur lève « Extension type asset already has a handler ». Ne pas retirer ce bloc sans vérifier qu'un squelette s'affiche encore.",
+  "overrides": {
+    "@pixi/assets": "7.2.4",
+    "@pixi/constants": "7.2.4",
+    "@pixi/core": "7.2.4",
+    "@pixi/display": "7.2.4",
+    "@pixi/extensions": "7.2.4",
+    "@pixi/graphics": "7.2.4",
+    "@pixi/math": "7.2.4",
+    "@pixi/mesh": "7.2.4",
+    "@pixi/mesh-extras": "7.2.4",
+    "@pixi/runner": "7.2.4",
+    "@pixi/settings": "7.2.4",
+    "@pixi/sprite": "7.2.4",
+    "@pixi/ticker": "7.2.4",
+    "@pixi/utils": "7.2.4"
   }
 }
 ```
+
+Le bloc `overrides` n'est pas là par précaution : sans lui, `pixi-spine` installe ses propres copies des sous-paquets Pixi. Deux moteurs coexistent alors dans la page, les vérifications de type internes échouent et le chargeur d'assets lève une erreur d'extension déjà enregistrée. La clé `//overrides` porte l'explication, parce qu'un fichier `package.json` n'accepte pas de commentaires et qu'un bloc de versions figées sans justification finit toujours par être supprimé par quelqu'un qui range.
 
 - [ ] **Étape 2 : Créer `tsconfig.json`**
 
@@ -3807,8 +3826,22 @@ redraw()
 const enemies = [...new Set(world.level.waves.flatMap((w) => w.spawns.map((s) => s.enemy)))]
 await loadSkeletons({ axies: ['olek', 'momo'], enemies })
 
-place(world, 'olek', world.level.path[6])
-place(world, 'momo', [world.level.path[6][0] + 1, world.level.path[6][1]])
+/**
+ * Première case voisine en plaine. Un décalage fixe ne convient pas : au niveau 1,
+ * le voisin de droite de `path[6]` est `path[7]`, donc une case de chemin, où une
+ * classe à distance ne peut pas se poser. Momo disparaîtrait sans erreur visible.
+ */
+function plainNeighbour(w: typeof world, cell: readonly [number, number]): [number, number] {
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n: [number, number] = [cell[0] + dc, cell[1] + dr]
+    if (w.board.kindAt(n) === 'plain') return n
+  }
+  throw new Error(`Aucun voisin en plaine pour ${cell}`)
+}
+
+const blocker = world.level.path[6]
+place(world, 'olek', blocker)
+place(world, 'momo', plainNeighbour(world, blocker))
 startWave(world)
 
 let acc = 0
