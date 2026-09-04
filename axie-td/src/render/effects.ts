@@ -15,8 +15,16 @@ export type EffectCtx = {
   onLeak: () => void
 }
 
-/** Position écran d'une unité, Axie ou chimère. */
-function posOf(world: World, uid: number, layout: Layout) {
+/**
+ * Position écran d'un événement.
+ *
+ * On préfère toujours celle que l'événement transporte : un ennemi tué a déjà
+ * quitté la liste quand le rendu lit les événements, et la recherche par
+ * identifiant ne trouverait rien. La recherche ne sert que pour les événements
+ * sans position, comme une attaque d'ennemi visant un Axie.
+ */
+function posOf(world: World, uid: number, layout: Layout, at?: { x: number; y: number }) {
+  if (at) return unitToPx(layout, at.x, at.y)
   const a = world.axies.find((x) => x.uid === uid)
   if (a) { const c = center(a.cell); return unitToPx(layout, c.x, c.y) }
   const e = world.enemies.find((x) => x.uid === uid)
@@ -33,7 +41,7 @@ export function consumeEvents(world: World, ctx: EffectCtx): void {
     switch (ev.k) {
       case 'attack': {
         const anim = ANIM.axie_attack[ev.cls]
-        const p = posOf(world, ev.to, ctx.layout)
+        const p = posOf(world, ev.to, ctx.layout, ev.at)
         if (p && anim) {
           playVfx(ctx.fx, anim.vfx, p.x, p.y, ctx.layout.cell / 180)
           ctx.sfx.play(anim.sfx)
@@ -41,18 +49,18 @@ export function consumeEvents(world: World, ctx: EffectCtx): void {
         break
       }
       case 'damage': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         if (p) spawnFloat(ctx.fx, ev.amount, p.x, p.y - ctx.layout.cell * 0.3, ev.kind)
         break
       }
       case 'status': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         const s = ANIM.status[ev.id]
         if (p && s) { playVfx(ctx.fx, s.vfx, p.x, p.y, ctx.layout.cell / 200); ctx.sfx.play(s.sfx) }
         break
       }
       case 'reaction': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         const r = ANIM.reaction[ev.id]
         if (p && r) {
           const list = Array.isArray(r.vfx) ? r.vfx : [r.vfx]

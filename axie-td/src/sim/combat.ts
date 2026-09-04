@@ -57,11 +57,11 @@ export function damageEnemy(w: World, e: EnemyUnit, raw: number, opts: DamageOpt
     amount *= BALANCE.statuses.wet.value ?? 1.2
   }
   e.hp -= amount
-  w.events.push({ k: 'damage', uid: e.uid, amount, kind: opts.kind ?? 'normal' })
+  w.events.push({ k: 'damage', uid: e.uid, amount, kind: opts.kind ?? 'normal', at: w.board.posAt(e.d) })
   if (e.hp <= 0) {
     e.hp = 0
     e.alive = false
-    w.events.push({ k: 'death', uid: e.uid })
+    w.events.push({ k: 'death', uid: e.uid, at: w.board.posAt(e.d) })
     return true
   }
   return false

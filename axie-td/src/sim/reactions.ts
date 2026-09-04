@@ -17,7 +17,7 @@ export function ricochet(w: World, a: AxieUnit, target: EnemyUnit, baseDamage: n
   const hit = enemiesInRadius(w, w.board.posAt(target.d), R.ricochet.radius, target.uid)
     .slice(0, R.ricochet.max_targets)
   if (hit.length === 0) return
-  w.events.push({ k: 'reaction', id: 'ricochet', uid: target.uid })
+  w.events.push({ k: 'reaction', id: 'ricochet', uid: target.uid, at: w.board.posAt(target.d) })
   for (const e of hit) {
     damageEnemy(w, e, baseDamage * R.ricochet.damage_mult, { from: a.cls })
     if (a.eff.tide) applyStatus(w, e, 'wet')
@@ -26,7 +26,7 @@ export function ricochet(w: World, a: AxieUnit, target: EnemyUnit, baseDamage: n
 
 /** Éclatement : la Bête achève une cible qui saigne. */
 export function burst(w: World, target: EnemyUnit): void {
-  w.events.push({ k: 'reaction', id: 'burst', uid: target.uid })
+  w.events.push({ k: 'reaction', id: 'burst', uid: target.uid, at: w.board.posAt(target.d) })
   for (const e of enemiesInRadius(w, w.board.posAt(target.d), R.burst.radius, target.uid)) {
     damageEnemy(w, e, R.burst.damage, { from: null })
   }

@@ -31,11 +31,11 @@ export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
   const crit = a.cls === 'beast' && wasFragile
   if (crit) {
     damage *= SHATTER_MULT
-    w.events.push({ k: 'reaction', id: 'shatter', uid: target.uid })
+    w.events.push({ k: 'reaction', id: 'shatter', uid: target.uid, at: w.board.posAt(target.d) })
   }
 
   const cls = BALANCE.classes[a.cls]
-  w.events.push({ k: 'attack', from: a.uid, to: target.uid, cls: a.cls })
+  w.events.push({ k: 'attack', from: a.uid, to: target.uid, cls: a.cls, at: w.board.posAt(target.d) })
 
   const died = damageEnemy(w, target, damage, {
     from: a.cls,
@@ -46,7 +46,7 @@ export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
   // Enracinement : l'Insecte sur une cible ralentie double la durée de ses DoT.
   const durationMult = a.cls === 'bug' && wasRooted ? ROOTING_MULT : 1
   if (a.cls === 'bug' && wasRooted) {
-    w.events.push({ k: 'reaction', id: 'rooting', uid: target.uid })
+    w.events.push({ k: 'reaction', id: 'rooting', uid: target.uid, at: w.board.posAt(target.d) })
   }
 
   if (!died && cls.on_hit_status) {

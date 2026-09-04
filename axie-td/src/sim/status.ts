@@ -41,7 +41,7 @@ export function applyStatus(w: World, e: EnemyUnit, id: StatusId, opts: ApplyOpt
   } else {
     e.statuses.push({ id, remaining, tickMult, dps: def.dps ?? 0 })
   }
-  w.events.push({ k: 'status', uid: e.uid, id })
+  w.events.push({ k: 'status', uid: e.uid, id, at: w.board.posAt(e.d) })
 }
 
 /**
@@ -57,7 +57,7 @@ export function refreshRoots(w: World): void {
     const idx = e.statuses.findIndex((s) => s.id === 'roots')
     if (rooted && idx < 0) {
       e.statuses.push({ id: 'roots', remaining: Infinity, tickMult: 1, dps: 0 })
-      w.events.push({ k: 'status', uid: e.uid, id: 'roots' })
+      w.events.push({ k: 'status', uid: e.uid, id: 'roots', at: w.board.posAt(e.d) })
     } else if (!rooted && idx >= 0) {
       e.statuses.splice(idx, 1)
     }

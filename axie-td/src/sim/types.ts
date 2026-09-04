@@ -65,13 +65,22 @@ export type EnemyUnit = {
   alive: boolean
 }
 
+/**
+ * Position en unités de case, portée par l'événement lui-même.
+ *
+ * Sans elle, le rendu ne peut rien afficher sur un coup qui tue : `resolveDeaths`
+ * retire l'ennemi de la liste avant que la boucle de rendu ne lise les événements,
+ * et le coup fatal, le plus satisfaisant du jeu, se passerait sans effet ni chiffre.
+ */
+export type EventAt = { x: number; y: number }
+
 export type SimEvent =
-  | { k: 'attack'; from: number; to: number; cls: ClassId }
-  | { k: 'damage'; uid: number; amount: number; kind: 'normal' | 'crit' | 'poison' | 'bleed' }
-  | { k: 'status'; uid: number; id: StatusId }
-  | { k: 'reaction'; id: 'ricochet' | 'rooting' | 'shatter' | 'burst'; uid: number }
+  | { k: 'attack'; from: number; to: number; cls: ClassId; at: EventAt }
+  | { k: 'damage'; uid: number; amount: number; kind: 'normal' | 'crit' | 'poison' | 'bleed'; at: EventAt }
+  | { k: 'status'; uid: number; id: StatusId; at: EventAt }
+  | { k: 'reaction'; id: 'ricochet' | 'rooting' | 'shatter' | 'burst'; uid: number; at: EventAt }
   | { k: 'enemyAttack'; uid: number; target: number }
-  | { k: 'death'; uid: number }
+  | { k: 'death'; uid: number; at: EventAt }
   | { k: 'ko'; uid: number }
   | { k: 'leak'; uid: number; damage: number }
   | { k: 'waveEnd' }
