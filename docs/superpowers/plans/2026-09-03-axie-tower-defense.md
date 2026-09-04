@@ -1019,13 +1019,22 @@ export type EnemyUnit = {
   alive: boolean
 }
 
+/**
+ * Position en unités de case, portée par l'événement lui-même.
+ *
+ * Sans elle, le rendu ne peut rien afficher sur un coup qui tue : `resolveDeaths`
+ * retire l'ennemi de la liste avant que la boucle de rendu ne lise les événements,
+ * et le coup fatal, le plus satisfaisant du jeu, se passerait sans effet ni chiffre.
+ */
+export type EventAt = { x: number; y: number }
+
 export type SimEvent =
-  | { k: 'attack'; from: number; to: number; cls: ClassId }
-  | { k: 'damage'; uid: number; amount: number; kind: 'normal' | 'crit' | 'poison' | 'bleed' }
-  | { k: 'status'; uid: number; id: StatusId }
-  | { k: 'reaction'; id: 'ricochet' | 'rooting' | 'shatter' | 'burst'; uid: number }
+  | { k: 'attack'; from: number; to: number; cls: ClassId; at: EventAt }
+  | { k: 'damage'; uid: number; amount: number; kind: 'normal' | 'crit' | 'poison' | 'bleed'; at: EventAt }
+  | { k: 'status'; uid: number; id: StatusId; at: EventAt }
+  | { k: 'reaction'; id: 'ricochet' | 'rooting' | 'shatter' | 'burst'; uid: number; at: EventAt }
   | { k: 'enemyAttack'; uid: number; target: number }
-  | { k: 'death'; uid: number }
+  | { k: 'death'; uid: number; at: EventAt }
   | { k: 'ko'; uid: number }
   | { k: 'leak'; uid: number; damage: number }
   | { k: 'waveEnd' }
@@ -1695,11 +1704,14 @@ export function damageEnemy(w: World, e: EnemyUnit, raw: number, opts: DamageOpt
     amount *= BALANCE.statuses.wet.value ?? 1.2
   }
   e.hp -= amount
-  w.events.push({ k: 'damage', uid: e.uid, amount, kind: opts.kind ?? 'normal' })
+  // La position accompagne l'événement : l'ennemi peut disparaître de la liste
+  // avant que le rendu ne le lise, notamment sur le coup qui le tue.
+  const at = w.board.posAt(e.d)
+  w.events.push({ k: 'damage', uid: e.uid, amount, kind: opts.kind ?? 'normal', at })
   if (e.hp <= 0) {
     e.hp = 0
     e.alive = false
-    w.events.push({ k: 'death', uid: e.uid })
+    w.events.push({ k: 'death', uid: e.uid, at })
     return true
   }
   return false
@@ -1910,7 +1922,7 @@ export function applyStatus(w: World, e: EnemyUnit, id: StatusId, opts: ApplyOpt
   } else {
     e.statuses.push({ id, remaining, tickMult, dps: def.dps ?? 0 })
   }
-  w.events.push({ k: 'status', uid: e.uid, id })
+  w.events.push({ k: 'status', uid: e.uid, id, at: w.board.posAt(e.d) })
 }
 
 /**
@@ -1926,7 +1938,7 @@ export function refreshRoots(w: World): void {
     const idx = e.statuses.findIndex((s) => s.id === 'roots')
     if (rooted && idx < 0) {
       e.statuses.push({ id: 'roots', remaining: Infinity, tickMult: 1, dps: 0 })
-      w.events.push({ k: 'status', uid: e.uid, id: 'roots' })
+      w.events.push({ k: 'status', uid: e.uid, id: 'roots', at: w.board.posAt(e.d) })
     } else if (!rooted && idx >= 0) {
       e.statuses.splice(idx, 1)
     }
@@ -2389,7 +2401,7 @@ export function ricochet(w: World, a: AxieUnit, target: EnemyUnit, baseDamage: n
   const hit = enemiesInRadius(w, w.board.posAt(target.d), R.ricochet.radius, target.uid)
     .slice(0, R.ricochet.max_targets)
   if (hit.length === 0) return
-  w.events.push({ k: 'reaction', id: 'ricochet', uid: target.uid })
+  w.events.push({ k: 'reaction', id: 'ricochet', uid: target.uid, at: w.board.posAt(target.d) })
   for (const e of hit) {
     damageEnemy(w, e, baseDamage * R.ricochet.damage_mult, { from: a.cls })
     if (a.eff.tide) applyStatus(w, e, 'wet')
@@ -2398,7 +2410,7 @@ export function ricochet(w: World, a: AxieUnit, target: EnemyUnit, baseDamage: n
 
 /** Éclatement : la Bête achève une cible qui saigne. */
 export function burst(w: World, target: EnemyUnit): void {
-  w.events.push({ k: 'reaction', id: 'burst', uid: target.uid })
+  w.events.push({ k: 'reaction', id: 'burst', uid: target.uid, at: w.board.posAt(target.d) })
   for (const e of enemiesInRadius(w, w.board.posAt(target.d), R.burst.radius, target.uid)) {
     damageEnemy(w, e, R.burst.damage, { from: null })
   }
@@ -2444,11 +2456,11 @@ export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
   const crit = a.cls === 'beast' && wasFragile
   if (crit) {
     damage *= SHATTER_MULT
-    w.events.push({ k: 'reaction', id: 'shatter', uid: target.uid })
+    w.events.push({ k: 'reaction', id: 'shatter', uid: target.uid, at: w.board.posAt(target.d) })
   }
 
   const cls = BALANCE.classes[a.cls]
-  w.events.push({ k: 'attack', from: a.uid, to: target.uid, cls: a.cls })
+  w.events.push({ k: 'attack', from: a.uid, to: target.uid, cls: a.cls, at: w.board.posAt(target.d) })
 
   const died = damageEnemy(w, target, damage, {
     from: a.cls,
@@ -2459,7 +2471,7 @@ export function axieAttack(w: World, a: AxieUnit, target: EnemyUnit): void {
   // Enracinement : l'Insecte sur une cible ralentie double la durée de ses DoT.
   const durationMult = a.cls === 'bug' && wasRooted ? ROOTING_MULT : 1
   if (a.cls === 'bug' && wasRooted) {
-    w.events.push({ k: 'reaction', id: 'rooting', uid: target.uid })
+    w.events.push({ k: 'reaction', id: 'rooting', uid: target.uid, at: w.board.posAt(target.d) })
   }
 
   if (!died && cls.on_hit_status) {
@@ -4571,8 +4583,16 @@ export type EffectCtx = {
   onLeak: () => void
 }
 
-/** Position écran d'une unité, Axie ou chimère. */
-function posOf(world: World, uid: number, layout: Layout) {
+/**
+ * Position écran d'un événement.
+ *
+ * On préfère toujours celle que l'événement transporte : un ennemi tué a déjà
+ * quitté la liste quand le rendu lit les événements, et la recherche par
+ * identifiant ne trouverait rien. La recherche ne sert que pour les événements
+ * sans position, comme une attaque d'ennemi visant un Axie.
+ */
+function posOf(world: World, uid: number, layout: Layout, at?: { x: number; y: number }) {
+  if (at) return unitToPx(layout, at.x, at.y)
   const a = world.axies.find((x) => x.uid === uid)
   if (a) { const c = center(a.cell); return unitToPx(layout, c.x, c.y) }
   const e = world.enemies.find((x) => x.uid === uid)
@@ -4589,7 +4609,7 @@ export function consumeEvents(world: World, ctx: EffectCtx): void {
     switch (ev.k) {
       case 'attack': {
         const anim = ANIM.axie_attack[ev.cls]
-        const p = posOf(world, ev.to, ctx.layout)
+        const p = posOf(world, ev.to, ctx.layout, ev.at)
         if (p && anim) {
           playVfx(ctx.fx, anim.vfx, p.x, p.y, ctx.layout.cell / 180)
           ctx.sfx.play(anim.sfx)
@@ -4597,18 +4617,18 @@ export function consumeEvents(world: World, ctx: EffectCtx): void {
         break
       }
       case 'damage': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         if (p) spawnFloat(ctx.fx, ev.amount, p.x, p.y - ctx.layout.cell * 0.3, ev.kind)
         break
       }
       case 'status': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         const s = ANIM.status[ev.id]
         if (p && s) { playVfx(ctx.fx, s.vfx, p.x, p.y, ctx.layout.cell / 200); ctx.sfx.play(s.sfx) }
         break
       }
       case 'reaction': {
-        const p = posOf(world, ev.uid, ctx.layout)
+        const p = posOf(world, ev.uid, ctx.layout, ev.at)
         const r = ANIM.reaction[ev.id]
         if (p && r) {
           const list = Array.isArray(r.vfx) ? r.vfx : [r.vfx]
