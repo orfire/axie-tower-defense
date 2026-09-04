@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "axie-td",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "axie-td", "run", "dev"],
+      "port": 5179
+    }
+  ]
+}
