@@ -4101,6 +4101,21 @@ export class DragDrop {
     return this.pointerId >= 0 && e.pointerId !== this.pointerId
   }
 
+  /**
+   * Abandonne le geste en cours sans rien déposer.
+   *
+   * Un glissement démarre dès l'appui, avant même que le compte à rebours de
+   * l'appui long ne s'achève. Sans cet abandon, ouvrir une fiche laisserait une
+   * session de glissement ouverte derrière elle, et le relâchement déposerait
+   * l'Axie à la position figée du départ, fiche encore affichée.
+   */
+  abort(): void {
+    if (this.state.kind === 'none') return
+    this.release()
+    this.state = { kind: 'none' }
+    this.ev.onUpdate(this.state)
+  }
+
   private down = (e: PointerEvent) => {
     if (this.state.kind !== 'none') return
     const layout = this.ev.getLayout()
@@ -4738,6 +4753,7 @@ cd axie-td && git add -A && git commit -m "feat: effets visuels additifs, nombre
 
 ```ts
 import { describe, expect, it } from 'vitest'
+import { BALANCE } from '../../src/data/load'
 import { axieCardHtml, enemyCardHtml } from '../../src/ui/cards'
 
 describe('fiche d’Axie', () => {
@@ -4762,6 +4778,17 @@ describe('fiche d’Axie', () => {
 
   it('décrit l’aura de la classe', () => {
     expect(html).toContain('Fureur')
+  })
+
+  it('tire ses chiffres des données et non d’une recopie', () => {
+    // La tâche 20 modifiera balance.json en boucle. Si la fiche recopiait ses
+    // valeurs, elle mentirait sur le lien traits → jeu dès le premier ajustement,
+    // et c'est précisément ce lien que le concours note à 35 %.
+    const bonus = BALANCE.parts_bonus.bird.rate!
+    expect(html).toContain(`+${Math.round(bonus * 100)} % cadence`)
+
+    const fury = BALANCE.auras.fury.value!
+    expect(axieCardHtml('buba')).toContain(`+${Math.round((fury - 1) * 100)} % de dégâts`)
   })
 })
 
@@ -4801,23 +4828,38 @@ const PART_FR: Record<string, string> = {
   horn: 'Corne', back: 'Dos', tail: 'Queue',
 }
 
-const AURA_FR: Record<string, { nom: string; texte: string }> = {
-  fury: { nom: 'Fureur', texte: 'Les voisins font +30 % de dégâts aux cibles sous la moitié de leurs PV.' },
-  tide: { nom: 'Marée', texte: 'Les cibles touchées par un voisin deviennent Trempées.' },
-  roots: { nom: 'Racines', texte: 'Les ennemis des cases voisines perdent 40 % de vitesse.' },
-  wind: { nom: 'Vent', texte: 'Les voisins gagnent une case de portée.' },
-  swarm: { nom: 'Essaim', texte: 'Les poisons posés par les voisins agissent deux fois plus vite.' },
-  scales: { nom: 'Écailles', texte: 'Les ennemis des cases voisines perdent 15 points d’armure.' },
+/**
+ * Textes d'aura, dont les chiffres viennent des données et non d'une recopie.
+ *
+ * Cette fiche est le seul endroit où le jury voit le lien entre les traits d'un
+ * Axie et son comportement. La tâche 20 passera son temps à modifier
+ * `balance.json` : une valeur recopiée ici s'en désolidariserait au premier
+ * rééquilibrage, et la fiche mentirait sur le cœur du design sans qu'un test
+ * ne s'en aperçoive.
+ */
+const AURA_FR: Record<string, { nom: string; texte: (v: number) => string }> = {
+  fury: { nom: 'Fureur', texte: (v) => `Les voisins font +${Math.round((v - 1) * 100)} % de dégâts aux cibles sous la moitié de leurs PV.` },
+  tide: { nom: 'Marée', texte: () => 'Les cibles touchées par un voisin deviennent Trempées.' },
+  roots: { nom: 'Racines', texte: (v) => `Les ennemis des cases voisines perdent ${Math.round((1 - v) * 100)} % de vitesse.` },
+  wind: { nom: 'Vent', texte: (v) => `Les voisins gagnent ${v} case${v > 1 ? 's' : ''} de portée.` },
+  swarm: { nom: 'Essaim', texte: (v) => `Les poisons posés par les voisins agissent ${v} fois plus vite.` },
+  scales: { nom: 'Écailles', texte: (v) => `Les ennemis des cases voisines perdent ${Math.abs(v)} points d’armure.` },
+}
+
+/** Effet chiffré d'une part, calculé depuis `BALANCE.parts_bonus`. */
+function partEffect(cls: ClassId): string {
+  const b = BALANCE.parts_bonus[cls]
+  const libelle: Record<string, string> = { damage: 'dégâts', rate: 'cadence', hp: 'PV' }
+  const lignes = (Object.entries(b) as [string, number][])
+    .filter(([, v]) => v > 0)
+    .sort((x, y) => y[1] - x[1]) // la statistique dominante en premier
+    .map(([k, v]) => `+${Math.round(v * 100)} % ${libelle[k] ?? k}`)
+  return lignes.join(', ') || '—'
 }
 
 const LINE_FR: Record<string, string> = {
   melee: 'Mêlée, peut bloquer sur le chemin',
   ranged: 'Distance, plaine ou colline',
-}
-
-const PART_EFFECT: Record<ClassId, string> = {
-  beast: '+6 % dégâts', bug: '+3 % dégâts, +3 % cadence', bird: '+6 % cadence',
-  aquatic: '+3 % cadence, +3 % PV', plant: '+6 % PV', reptile: '+4 % PV, +2 % dégâts',
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
@@ -4839,7 +4881,7 @@ export function axieCardHtml(axieId: string): string {
       <i class="ic ic-${partCls}"></i>
       <span class="part-slot">${PART_FR[slot]}</span>
       <span class="part-cls">${CLASS_FR[partCls]}</span>
-      <span class="part-eff">${PART_EFFECT[partCls as ClassId] ?? '—'}</span>
+      <span class="part-eff">${partEffect(partCls as ClassId)}</span>
     </li>`).join('')
 
   return `
@@ -4852,7 +4894,7 @@ export function axieCardHtml(axieId: string): string {
       <li><span>Portée</span><b>${c.range}</b></li>
     </ul>
     <h4>Aura : ${aura.nom}</h4>
-    <p>${aura.texte}</p>
+    <p>${aura.texte(BALANCE.auras[c.aura].value ?? 0)}</p>
     <h4>Ses 6 parts</h4>
     <ul class="parts">${parts}</ul>
     <p class="card-note">Total : ${pct(def.bonuses.hp)} PV, ${pct(def.bonuses.damage)} dégâts, ${pct(def.bonuses.rate)} cadence.</p>`
@@ -4891,7 +4933,7 @@ export function enemyCardHtml(type: string): string {
 cd axie-td && npx vitest run tests/ui/cards.test.ts
 ```
 
-Attendu : 5 tests passent.
+Attendu : 6 tests passent, soit 110 avec les 104 des tâches précédentes.
 
 - [ ] **Étape 5 : Ajouter l'overlay de fiche**
 
@@ -4907,6 +4949,11 @@ export class CardOverlay {
     this.el.hidden = true
     this.el.addEventListener('pointerdown', (e) => {
       if (e.target === this.el) this.hide()
+    })
+    // Le panneau se déclare modal : la touche d'échappement doit le fermer,
+    // sinon un joueur au clavier s'y retrouve enfermé.
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.el.hidden) this.hide()
     })
   }
 
@@ -4965,15 +5012,31 @@ const cards = new CardOverlay()
 cards.mount(host)
 
 // Appui long sur le bac : 400 ms sans bouger ouvre la fiche au lieu de glisser.
+// Le doigt qui a commencé est mémorisé, sinon deux appuis simultanés sur deux
+// emplacements s'annulent l'un l'autre et la fiche s'ouvre après le relâchement.
 let pressTimer: number | undefined
+let pressPointer = -1
+
 tray.el.addEventListener('pointerdown', (e) => {
+  if (pressPointer >= 0) return
   const slot = (e.target as HTMLElement).closest<HTMLElement>('.slot')
   const id = slot?.dataset.axieId
   if (!id) return
-  pressTimer = window.setTimeout(() => { cards.showAxie(id) }, 400)
+  pressPointer = e.pointerId
+  pressTimer = window.setTimeout(() => {
+    // Le glissement a déjà démarré à l'appui : on l'abandonne avant d'ouvrir.
+    dragDrop.abort()
+    cards.showAxie(id)
+    pressPointer = -1
+  }, 400)
 })
+
 for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
-  tray.el.addEventListener(evt, () => { window.clearTimeout(pressTimer) })
+  tray.el.addEventListener(evt, (e) => {
+    if ((e as PointerEvent).pointerId !== pressPointer) return
+    window.clearTimeout(pressTimer)
+    pressPointer = -1
+  })
 }
 
 // Pendant une vague, un tap sur le plateau ouvre la fiche de ce qui s'y trouve.
