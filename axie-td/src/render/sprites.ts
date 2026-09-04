@@ -38,13 +38,30 @@ export function makeSpine(key: SkeletonKey): Spine {
  */
 type StateWithCurrent = { getCurrent(track: number): { animation?: { name: string } } | null }
 
-/** Joue une animation si le squelette la possède, sinon la première disponible en repli. */
-export function playAnim(spine: Spine, name: string, loop: boolean, fallbacks: string[] = []): void {
+/**
+ * Joue une animation si le squelette la possède, sinon la première disponible en repli.
+ *
+ * Le garde-fou vaut pour toutes les animations, en boucle ou non. Il ne portait
+ * d'abord que sur les boucles, ce qui figeait les animations à jouer une fois :
+ * `sync` rappelle cette fonction à chaque frame, `setAnimation` crée à chaque
+ * appel une nouvelle piste, et l'animation redémarrait donc 60 fois par seconde
+ * sans jamais dépasser sa première image. Un Axie KO restait figé.
+ *
+ * `restart` sert aux appelants qui veulent vraiment rejouer depuis le début,
+ * comme une animation d'attaque déclenchée à chaque coup.
+ */
+export function playAnim(
+  spine: Spine,
+  name: string,
+  loop: boolean,
+  fallbacks: string[] = [],
+  restart = false,
+): void {
   const has = (n: string) => spine.spineData.animations.some((a) => a.name === n)
   const pick = [name, ...fallbacks].find(has)
   if (!pick) return
   const current = (spine.state as unknown as StateWithCurrent).getCurrent(0)
-  if (current && current.animation?.name === pick && loop) return
+  if (!restart && current && current.animation?.name === pick) return
   spine.state.setAnimation(0, pick, loop)
 }
 

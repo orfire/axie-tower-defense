@@ -35,9 +35,15 @@ function plainNeighbour(w: typeof world, cell: readonly [number, number]): [numb
   throw new Error(`Aucun voisin en plaine pour ${cell}`)
 }
 
+// `place` renvoie null quand la case est refusée. Sans ce contrôle, un Axie
+// disparaît sans message et on cherche la cause ailleurs, comme c'est arrivé ici.
 const blocker = world.level.path[6]
-place(world, 'olek', blocker)
-place(world, 'momo', plainNeighbour(world, blocker))
+for (const [id, cell] of [
+  ['olek', blocker],
+  ['momo', plainNeighbour(world, blocker)],
+] as const) {
+  if (!place(world, id, cell)) throw new Error(`Placement refusé : ${id} en ${cell}`)
+}
 startWave(world)
 
 let acc = 0
