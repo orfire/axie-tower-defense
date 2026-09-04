@@ -1,8 +1,9 @@
 import type { Spine } from 'pixi-spine'
-import { createWorld, startWave } from './sim/world'
+import { Container } from 'pixi.js'
+import { LEVELS, axieDef, levelDef } from './data/load'
+import { Session, finishLevel } from './game/session'
+import { saveNow } from './save/storage'
 import { move, place, remove } from './sim/placement'
-import { step } from './sim/game'
-import { axieDef } from './data/load'
 import { GameApp } from './render/app'
 import { drawBoard } from './render/board'
 import { WorldView } from './render/view'
@@ -10,32 +11,80 @@ import { loadSkeletons, makeSpine, playAnim, ANIM } from './render/sprites'
 import { loadVfx } from './render/vfx'
 import { tickFloats } from './render/floats'
 import { consumeEvents } from './render/effects'
-import { Sfx } from './audio/sfx'
-import { DT } from './sim/types'
-import { Container } from 'pixi.js'
-import { Hud } from './ui/hud'
-import { Tray } from './ui/tray'
-import { DragDrop, type DragState } from './ui/dragdrop'
-import { drawAuraLinks, drawAuraZones, drawOverlay } from './ui/overlay'
-import { CardOverlay } from './ui/cards'
 import { pxToCell, unitToPx } from './render/layout'
+import { Sfx } from './audio/sfx'
+import { CardOverlay } from './ui/cards'
+import { DragDrop, type DragState } from './ui/dragdrop'
+import { Hud } from './ui/hud'
+import { drawAuraLinks, drawAuraZones, drawOverlay } from './ui/overlay'
+import { Router, type ScreenId } from './ui/router'
+import {
+  briefHtml, collectionHtml, defeatHtml, draftHtml, mapHtml, resultHtml, titleHtml,
+} from './ui/screens'
+import { Tray } from './ui/tray'
 
 const host = document.querySelector<HTMLElement>('#app')
 if (!host) throw new Error('#app introuvable')
 
-// Bac de développement (GDD §7 : le draft réel viendra d'un écran de sélection,
-// tâche 17). `?niveau=N` choisit le niveau à tester, sinon le premier.
-const wanted = Number(new URLSearchParams(location.search).get('niveau'))
-const levelId = Number.isFinite(wanted) ? Math.min(Math.max(Math.trunc(wanted), 1), 8) : 1
+const session = new Session()
+const router = new Router()
+session.speed2x = session.save.speed2x
 
-const world = createWorld(levelId)
+/**
+ * Raccourci de développement : `?niveau=N` entre directement dans le niveau N,
+ * avec le draft imposé s'il y en a un, sinon les Axies disponibles.
+ *
+ * La carte de campagne l'a remplacé pour le jeu normal, mais il contourne le
+ * verrouillage par étoiles : c'est le seul moyen d'aller éprouver les niveaux 6
+ * et 8 sans rejouer toute la campagne. Absence du paramètre = démarrage normal
+ * sur l'écran de titre, d'où le `NaN` explicite plutôt que `Number(null)`, qui
+ * vaut 0 et passerait pour une valeur donnée.
+ */
+const rawLevel = new URLSearchParams(location.search).get('niveau')
+const wanted = rawLevel === null ? NaN : Number(rawLevel)
+const devLevel = Number.isFinite(wanted)
+  ? Math.min(Math.max(Math.trunc(wanted), 1), LEVELS.length)
+  : null
 
-// Sur les niveaux à draft libre, une main couvrant les six classes : c'est le
-// seul moyen d'éprouver les auras et le triangle tant que l'écran de draft
-// n'existe pas. Dusk est hors v1.
-const DRAFT = world.level.draft.forced ?? ['olek', 'momo', 'puffy', 'buba', 'pomodoro', 'venoki']
+// --- Écrans HTML -------------------------------------------------------------
+
+/**
+ * Les sept écrans hors jeu vivent dans ce seul conteneur, opaque et au-dessus
+ * du plateau. Le jeu, lui, n'est jamais démonté : masquer le canvas coûte moins
+ * qu'une application Pixi recréée à chaque aller-retour vers la carte.
+ */
+const screensEl = document.createElement('div')
+screensEl.className = 'screens'
+host.append(screensEl)
+
+/** Ce que les écrans ont besoin de retenir entre deux navigations. */
+const nav = {
+  levelId: 1,
+  /** Draft en cours de composition sur l'écran de draft. */
+  picked: [] as string[],
+  stars: 0,
+  /** Axie débloqué par le dernier résultat, affiché en fiche. */
+  unlocked: null as string | null,
+  /** Vague atteinte à la défaite. */
+  wave: 1,
+}
+
+// --- Jeu ---------------------------------------------------------------------
+
 const game = new GameApp(host)
-const view = new WorldView(game)
+const worldView = new WorldView(game)
+const canvas = game.app.view as HTMLCanvasElement
+
+/**
+ * Barre haute, bac et barre basse dans un même calque, masqué hors du jeu.
+ *
+ * Sans ce regroupement, leurs boutons resteraient dans l'ordre de tabulation
+ * derrière l'écran de titre : un joueur au clavier tomberait sur « Lancer la
+ * vague » invisible.
+ */
+const gameUi = document.createElement('div')
+gameUi.className = 'game-ui'
+host.append(gameUi)
 
 // `drawOverlay` (cases valides, cercle de portée) va sous les unités : la
 // couche de surbrillance. `drawAuraLinks` va au-dessus, dans la couche
@@ -53,29 +102,15 @@ const auraLinksGfx = new Container()
 const dragLayer = new Container()
 game.fxLayer.addChild(auraLinksGfx, dragLayer)
 
-const redraw = () => drawBoard(game.boardLayer, world.board, game.layout)
+const redraw = () => {
+  if (session.world) drawBoard(game.boardLayer, session.world.board, game.layout)
+}
 game.onResize(redraw)
-redraw()
-
-const enemies = [...new Set(world.level.waves.flatMap((w) => w.spawns.map((s) => s.enemy)))]
-await loadSkeletons({ axies: DRAFT, enemies })
-
-// Atlas d'effets nécessaires au niveau : les attaques des classes du draft et
-// tous les statuts du jeu (petit ensemble fixe). Les autres atlas restent sur
-// le disque, chargés seulement si un futur niveau en a besoin.
-const draftClasses = [...new Set(DRAFT.map((id) => axieDef(id).class))]
-const attackVfxIds = draftClasses
-  .map((c) => ANIM.axie_attack[c]?.vfx)
-  .filter((v): v is string => Boolean(v))
-const statusVfxIds = Object.values(ANIM.status).map((s) => s.vfx)
-await loadVfx([...attackVfxIds, ...statusVfxIds])
 
 const sfx = new Sfx()
 
-// --- HUD, bac, barre basse -------------------------------------------------
-
 const hud = new Hud()
-hud.mount(host)
+hud.mount(gameUi)
 
 function syncMuteBtn(): void {
   hud.muteBtn.classList.toggle('is-muted', sfx.muted)
@@ -89,7 +124,7 @@ hud.muteBtn.addEventListener('click', () => {
 })
 
 const tray = new Tray()
-tray.mount(host)
+tray.mount(gameUi)
 
 const cards = new CardOverlay()
 cards.mount(host)
@@ -98,7 +133,7 @@ cards.mount(host)
 // dédiés à une fuite, juste un signal d'écran (et une vibration sur mobile).
 const leakFlash = document.createElement('div')
 leakFlash.className = 'leak-flash'
-host.append(leakFlash)
+gameUi.append(leakFlash)
 let leakFlashTimer: ReturnType<typeof setTimeout> | undefined
 function flashLeak(): void {
   leakFlash.classList.add('is-on')
@@ -116,29 +151,43 @@ launchBtn.textContent = 'Lancer la vague'
 const speedBtn = document.createElement('button')
 speedBtn.type = 'button'
 speedBtn.className = 'speed'
-speedBtn.textContent = '×1'
-bar.append(launchBtn, speedBtn)
-host.append(bar)
+const quitBtn = document.createElement('button')
+quitBtn.type = 'button'
+quitBtn.className = 'speed quit'
+quitBtn.textContent = '☰'
+quitBtn.setAttribute('aria-label', 'Quitter le niveau et revenir à la carte')
+bar.append(launchBtn, speedBtn, quitBtn)
+gameUi.append(bar)
 
-let speedMult = 1
+function syncSpeedBtn(): void {
+  speedBtn.classList.toggle('is-on', session.speed2x)
+  speedBtn.textContent = session.speed2x ? '×2' : '×1'
+  speedBtn.setAttribute('aria-pressed', String(session.speed2x))
+}
+syncSpeedBtn()
 speedBtn.addEventListener('click', () => {
-  speedMult = speedMult === 1 ? 2 : 1
-  speedBtn.classList.toggle('is-on', speedMult === 2)
-  speedBtn.textContent = `×${speedMult}`
+  session.speed2x = !session.speed2x
+  session.save = { ...session.save, speed2x: session.speed2x }
+  saveNow(session.save)
+  syncSpeedBtn()
 })
 
+quitBtn.addEventListener('click', () => router.go('map'))
+
 launchBtn.addEventListener('click', () => {
-  startWave(world)
+  session.launchWave()
   refreshChrome()
 })
 
 function refreshChrome(): void {
-  hud.update(world)
-  tray.update(world, DRAFT)
-  launchBtn.disabled = world.phase !== 'placement'
-  drawOverlay(overlayGfx, world, game.layout, dragDrop.state)
-  drawAuraZones(auraZonesGfx, world, game.layout)
-  drawAuraLinks(auraLinksGfx, world, game.layout)
+  const w = session.world
+  if (!w) return
+  hud.update(w)
+  tray.update(w, session.draft)
+  launchBtn.disabled = w.phase !== 'placement'
+  drawOverlay(overlayGfx, w, game.layout, dragDrop.state)
+  drawAuraZones(auraZonesGfx, w, game.layout)
+  drawAuraLinks(auraLinksGfx, w, game.layout)
 }
 
 // --- Glisser-déposer ---------------------------------------------------------
@@ -148,8 +197,8 @@ function refreshChrome(): void {
  * `WorldView` ne peut donc pas l'afficher (note d'architecture de la tâche 13).
  * Le fantôme suit tout glissement, qu'il vienne du bac ou d'un Axie déjà posé :
  * pas besoin de distinguer les deux ici. Pour un Axie déjà posé, c'est
- * `view.sync(world, draggedUid)` qui masque sa case d'origine pendant le
- * geste, pour que le fantôme reste la seule copie visible.
+ * `worldView.sync(w, draggedUid)` qui masque sa case d'origine pendant le geste,
+ * pour que le fantôme reste la seule copie visible.
  */
 let ghost: { axieId: string; spine: Spine } | null = null
 
@@ -193,21 +242,27 @@ function draggedUid(): number {
 }
 
 const dragDrop = new DragDrop({
-  getWorld: () => world,
+  // `axieAt` est consulté avant `getWorld` : hors partie il ne trouve rien et
+  // le geste s'arrête là, si bien que `getWorld` n'est jamais appelé à vide.
+  getWorld: () => session.world!,
   getLayout: () => game.layout,
   axieAt: (cell) => {
-    const a = world.axies.find((x) => !x.ko && x.cell[0] === cell[0] && x.cell[1] === cell[1])
+    const w = session.world
+    if (!w) return null
+    const a = w.axies.find((x) => !x.ko && x.cell[0] === cell[0] && x.cell[1] === cell[1])
     return a ? a.uid : null
   },
   onDrop: (state) => {
+    const w = session.world
+    if (!w) return
     if (state.kind === 'fromTray') {
-      if (state.cell) place(world, state.axieId, state.cell)
+      if (state.cell) place(w, state.axieId, state.cell)
     } else if (state.kind === 'fromBoard') {
       if (state.cell) {
-        move(world, state.uid, state.cell)
+        move(w, state.uid, state.cell)
       } else if (!pxToCell(game.layout, state.px, state.py)) {
         // Relâché hors du plateau (au-dessus du bac ou de la barre) : renvoyé au bac.
-        remove(world, state.uid)
+        remove(w, state.uid)
       }
       // Relâché sur le plateau mais trop loin de toute case valide : reste en place.
     }
@@ -215,11 +270,13 @@ const dragDrop = new DragDrop({
     refreshChrome()
   },
   onUpdate: (state) => {
+    const w = session.world
+    if (!w) return
     updateGhost(state)
-    drawOverlay(overlayGfx, world, game.layout, state)
+    drawOverlay(overlayGfx, w, game.layout, state)
     // Les zones suivent l'Axie en main : on lit où portera son aura avant de
     // lâcher, ce qui est tout l'intérêt de les montrer pendant le placement.
-    drawAuraZones(auraZonesGfx, world, game.layout)
+    drawAuraZones(auraZonesGfx, w, game.layout)
   },
   onTap: (_uid, axieId) => {
     clearGhost()
@@ -227,7 +284,7 @@ const dragDrop = new DragDrop({
     refreshChrome()
   },
 })
-dragDrop.attach(game.app.view as HTMLCanvasElement)
+dragDrop.attach(canvas)
 
 tray.onPick((axieId, px, py, e) => {
   dragDrop.startFromTray(axieId, px, py, e)
@@ -268,30 +325,179 @@ for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
 
 // Les Axies posés passent par `onTap` du glisser-déposer, dans les deux phases.
 // Il ne reste ici que les chimères, que le glissement ne connaît pas.
-const canvas = game.app.view as HTMLCanvasElement
 canvas.addEventListener('pointerdown', (e) => {
-  if (world.phase !== 'wave') return
+  const w = session.world
+  if (!w || w.phase !== 'wave') return
   const cell = pxToCell(game.layout, e.clientX, e.clientY)
   if (!cell) return
-  if (world.axies.some((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])) return
-  const enemy = world.enemies.find((en) => {
-    const c = world.board.cellAt(en.d)
+  if (w.axies.some((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])) return
+  const enemy = w.enemies.find((en) => {
+    const c = w.board.cellAt(en.d)
     return c[0] === cell[0] && c[1] === cell[1]
   })
   if (enemy) cards.showEnemy(enemy.type)
 })
 
-refreshChrome()
+// --- Chargement d'un niveau --------------------------------------------------
+
+/**
+ * Squelettes et atlas du niveau à venir. Les deux fonctions ignorent ce qui est
+ * déjà en mémoire : rejouer un niveau ne recharge rien.
+ */
+async function preload(draft: string[], enemies: string[]): Promise<void> {
+  await loadSkeletons({ axies: draft, enemies })
+  // Atlas d'effets nécessaires au niveau : les attaques des classes du draft et
+  // tous les statuts du jeu (petit ensemble fixe). Les autres atlas restent sur
+  // le disque, chargés seulement si un futur niveau en a besoin.
+  const draftClasses = [...new Set(draft.map((id) => axieDef(id).class))]
+  const attackVfxIds = draftClasses
+    .map((c) => ANIM.axie_attack[c]?.vfx)
+    .filter((v): v is string => Boolean(v))
+  const statusVfxIds = Object.values(ANIM.status).map((s) => s.vfx)
+  await loadVfx([...attackVfxIds, ...statusVfxIds])
+}
+
+/** Vrai tant que les assets du niveau ne sont pas là : l'écran de jeu attend. */
+let loading = false
+/**
+ * Jeton de la dernière entrée en jeu. Un joueur qui repart sur la carte pendant
+ * le chargement ne doit pas voir le plateau s'afficher par-dessus quand les
+ * assets finissent d'arriver.
+ */
+let playToken = 0
+/** Fin de niveau déjà traitée : `finish` n'enregistre qu'une fois. */
+let ended = false
+
+async function startPlay(levelId: number, draft: string[]): Promise<void> {
+  const token = ++playToken
+  loading = true
+  ended = false
+  session.begin(levelId, draft)
+  render()
+  await preload(session.draft, session.announcedEnemies(levelId))
+  if (token !== playToken || router.current !== 'play') return
+  loading = false
+  worldView.clear()
+  redraw()
+  refreshChrome()
+  render()
+}
+
+// --- Navigation --------------------------------------------------------------
+
+/** Numéro de niveau porté par un paramètre d'écran, ou le niveau courant. */
+function levelParam(p: Record<string, unknown>): number {
+  const n = Number(p.levelId)
+  return Number.isFinite(n) && n >= 1 ? n : nav.levelId
+}
+
+router.onEnter('brief', (p) => { nav.levelId = levelParam(p) })
+
+router.onEnter('draft', (p) => {
+  nav.levelId = levelParam(p)
+  nav.picked = session.suggestedDraft(nav.levelId)
+})
+
+router.onEnter('play', (p) => {
+  const id = levelParam(p)
+  const draft = Array.isArray(p.draft) && p.draft.length > 0
+    ? (p.draft as string[])
+    : session.suggestedDraft(id)
+  void startPlay(id, draft)
+})
+
+for (const id of ['title', 'map', 'brief', 'draft', 'result', 'defeat', 'collection'] as const) {
+  router.onEnter(id, () => render())
+}
+
+function screenHtml(): string {
+  switch (router.current) {
+    case 'title': return titleHtml(session.save)
+    case 'map': return mapHtml(session.save)
+    case 'brief': return briefHtml(session, nav.levelId)
+    case 'draft': return draftHtml(session, nav.levelId, nav.picked)
+    case 'result': return resultHtml(nav.levelId, nav.stars, session.save, nav.unlocked)
+    case 'defeat': return defeatHtml(nav.levelId, nav.wave)
+    case 'collection': return collectionHtml(session.save)
+    default: return '<div class="screen"><p class="hint">Chargement…</p></div>'
+  }
+}
+
+function render(): void {
+  const playing = router.current === 'play' && !loading
+  gameUi.hidden = !playing
+  canvas.style.visibility = playing ? 'visible' : 'hidden'
+  screensEl.hidden = playing
+  if (playing) return
+  screensEl.innerHTML = screenHtml()
+  screensEl.scrollTop = 0
+}
+
+/**
+ * Une seule délégation pour les sept écrans : le HTML est réécrit à chaque
+ * navigation, un écouteur par bouton serait reposé à chaque fois.
+ */
+screensEl.addEventListener('click', (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-go],[data-level],[data-draft],[data-play],[data-retry],[data-pick],[data-unpick],[data-card]')
+  if (!el) return
+  const d = el.dataset
+
+  if (d.go) { router.go(d.go as ScreenId); return }
+  if (d.level) { router.go('brief', { levelId: Number(d.level) }); return }
+  if (d.draft) { router.go('draft', { levelId: Number(d.draft) }); return }
+  if (d.play) { router.go('play', { levelId: Number(d.play), draft: [...nav.picked] }); return }
+  // « Réessayer » conserve le draft de la tentative précédente (GDD §11.5) :
+  // seule la disposition est à revoir, les vagues sont identiques.
+  if (d.retry) { router.go('play', { levelId: Number(d.retry), draft: [...session.draft] }); return }
+  if (d.card) { cards.showAxie(d.card); return }
+
+  // Composition du draft. Une équipe imposée ne se modifie pas.
+  if (levelDef(nav.levelId).draft.forced) return
+  if (d.pick) {
+    if (nav.picked.includes(d.pick)) nav.picked = nav.picked.filter((x) => x !== d.pick)
+    else if (nav.picked.length < 5) nav.picked = [...nav.picked, d.pick]
+    render()
+  } else if (d.unpick) {
+    nav.picked = nav.picked.filter((x) => x !== d.unpick)
+    render()
+  }
+})
+
+// --- Fin de niveau -----------------------------------------------------------
+
+/**
+ * Court délai avant l'écran de résultat : le coup fatal, le dernier nombre
+ * flottant et le flash de fuite ont le temps de s'afficher.
+ */
+const END_DELAY_MS = 900
+
+function onLevelEnd(): void {
+  const r = finishLevel(session)
+  if (!r) return
+  ended = true
+  nav.levelId = session.levelId
+  nav.stars = r.stars
+  nav.unlocked = r.unlocked
+  nav.wave = r.wave
+  if (r.won) sfx.play(ANIM.level.stars?.sfx)
+  window.setTimeout(() => {
+    if (router.current === 'play') router.go(r.won ? 'result' : 'defeat')
+  }, END_DELAY_MS)
+}
 
 // --- Boucle de simulation ----------------------------------------------------
 
-let acc = 0
 game.app.ticker.add(() => {
+  const w = session.world
+  if (!w || router.current !== 'play' || loading) return
   const dtReal = game.app.ticker.deltaMS / 1000
-  acc += dtReal * speedMult
-  while (acc >= DT) { step(world); acc -= DT }
-  consumeEvents(world, { fx: game.fxLayer, layout: game.layout, sfx, onLeak: flashLeak })
+  session.advance(dtReal)
+  consumeEvents(w, { fx: game.fxLayer, layout: game.layout, sfx, onLeak: flashLeak })
   tickFloats(dtReal)
-  view.sync(world, draggedUid())
+  worldView.sync(w, draggedUid())
   refreshChrome()
+  if (!ended && (w.phase === 'won' || w.phase === 'lost')) onLevelEnd()
 })
+
+if (devLevel !== null) router.go('play', { levelId: devLevel })
+else render()

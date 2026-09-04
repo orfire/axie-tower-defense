@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BALANCE } from '../../src/data/load'
-import { axieCardHtml, enemyCardHtml } from '../../src/ui/cards'
+import { ENEMY_FR, axieCardHtml, enemyCardHtml } from '../../src/ui/cards'
 
 describe('fiche d’Axie', () => {
   const html = axieCardHtml('xia')
@@ -46,5 +46,22 @@ describe('fiche de chimère', () => {
     expect(html).toContain('350')
     expect(html).toContain('40')
     expect(html).toContain('ligne')
+  })
+})
+
+describe('noms de chimères', () => {
+  it('donne un nom français à chaque chimère du jeu', () => {
+    for (const type of Object.keys(BALANCE.enemies)) {
+      expect(ENEMY_FR[type], type).toBeTruthy()
+      // Les identifiants du kit sont en anglais et à tirets : le nom affiché
+      // ne doit jamais être une simple recopie.
+      expect(ENEMY_FR[type], type).not.toBe(type)
+    }
+  })
+
+  it('affiche ce nom sur la fiche plutôt que l’identifiant', () => {
+    const html = enemyCardHtml('wolf-aquatic-alpha')
+    expect(html).toContain('Alpha des marais')
+    expect(html).not.toContain('wolf-aquatic-alpha')
   })
 })

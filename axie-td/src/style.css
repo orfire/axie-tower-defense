@@ -43,3 +43,101 @@ body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user
 .traits li { font-size: 13px; padding: 2px 0 2px 14px; position: relative; }
 .traits li::before { content: "•"; position: absolute; left: 2px; }
 .card-close { width: 100%; margin-top: 14px; height: 40px; border: 0; border-radius: 12px; background: #2b3a33; color: #fff; font: inherit; font-weight: 600; }
+
+/* --- Écrans (tâche 17) ---------------------------------------------------- */
+
+/* Le calque du jeu ne capte le doigt que sur ses barres : le reste du geste
+   appartient au plateau Pixi qui vit dessous. */
+.game-ui { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.game-ui[hidden] { display: none !important; }
+.game-ui > * { pointer-events: auto; }
+.quit { font-size: 18px; }
+
+/* `touch-action: none` sur le body empêche tout défilement tactile : les écrans
+   le rouvrent sur l'axe vertical, sinon une collection de 19 Axies est
+   inatteignable au doigt. Même raison pour les fiches, qui débordent souvent. */
+.screens { position: absolute; inset: 0; z-index: 5; overflow-y: auto; touch-action: pan-y;
+  background: #1b221e; color: #f3f1e8; }
+.screens[hidden] { display: none !important; }
+.card { touch-action: pan-y; }
+
+.screen { min-height: 100dvh; display: flex; flex-direction: column; gap: 14px;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+.screen h1 { margin: 0; font-size: 34px; line-height: 1.1; letter-spacing: .5px; }
+.screen h2 { margin: 0; font-size: 24px; }
+.screen h4 { margin: 10px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: #9db0a4; }
+.screen p { margin: 0; font-size: 14px; line-height: 1.45; }
+.screen .hint { color: #9db0a4; font-size: 13px; }
+.screen .legal { margin-top: auto; color: #7d8f85; font-size: 12px; }
+.tagline { color: #ffd23f; }
+
+.screen-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 600; }
+.cta { height: 52px; border: 0; border-radius: 16px; background: #e0742b; color: #fff;
+  font: inherit; font-size: 18px; font-weight: 700; }
+.cta:disabled { background: #55665d; color: rgba(255,255,255,.55); }
+.ghost { min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.22); border-radius: 12px;
+  background: transparent; color: #f3f1e8; font: inherit; font-weight: 600; }
+.stars { letter-spacing: 2px; color: #ffd23f; font-size: 15px; }
+
+/* Carte de campagne : une colonne de huit médaillons (GDD §11.5). */
+.levels { display: flex; flex-direction: column; gap: 10px; }
+.level { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px;
+  min-height: 58px; padding: 0 14px; border: 0; border-radius: 16px; background: #354a41;
+  color: #f3f1e8; font: inherit; text-align: left; }
+.level-num { width: 34px; height: 34px; border-radius: 50%; background: #e0742b; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.level-name { font-size: 15px; font-weight: 600; }
+.level.is-locked { background: #2a352f; color: #7d8f85; }
+.level.is-locked .level-num { background: #55665d; }
+.level.is-locked .stars { color: #7d8f85; letter-spacing: 0; font-size: 12px; }
+
+/* Fiche du niveau : la miniature du chemin à gauche, l'annonce à droite. */
+.brief-body { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: start; }
+.thumb { width: 96px; height: 137px; border-radius: 12px; display: block; }
+.enemy-list { list-style: none; margin: 0; padding: 0; }
+.enemy-list li { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 8px;
+  font-size: 13px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.enemy-list em { color: #9db0a4; font-style: normal; font-size: 12px; }
+
+/* Draft : cinq emplacements en haut, la collection dessous. */
+.picks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: 72px; padding: 4px; border: 0; border-radius: 14px; background: #354a41;
+  color: #f3f1e8; font: inherit; font-size: 10px; font-weight: 600; }
+.pick.is-empty { border: 2px dashed rgba(255,255,255,.2); background: transparent; color: #55665d;
+  font-size: 15px; }
+
+.collection { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.collect { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 92px; padding: 10px 4px; border: 2px solid transparent; border-radius: 14px;
+  background: #354a41; color: #f3f1e8; font: inherit; }
+.collect .nm { font-size: 12px; font-weight: 700; }
+.collect .pr { font-size: 10px; color: #9db0a4; text-align: center; line-height: 1.25; }
+/* Le choix ne se lit pas qu'à la couleur : coche et cadre le disent aussi. */
+.collect.is-on { border-color: #ffd23f; }
+.collect.is-on::after { content: "✓"; position: absolute; top: 4px; right: 6px; color: #ffd23f;
+  font-size: 14px; font-weight: 700; }
+.collect.is-locked { background: #2a352f; color: #7d8f85; }
+.collect.is-locked .nm { color: #ffd23f; }
+.collect.is-locked .ic { background: #55665d; }
+
+/* Résultat et défaite. */
+.big-stars { font-size: 40px; letter-spacing: 6px; text-align: center; }
+.big-stars .stars { font-size: 40px; }
+.unlock { background: #f7f8f3; color: #22302a; border-radius: 16px; padding: 14px 16px; }
+.unlock .hint { color: #5f6d64; text-transform: uppercase; letter-spacing: .8px; font-size: 11px; }
+.unlock h4 { color: #5f6d64; }
+
+/* Pastilles de classe. Décoratives : le nom de la classe est toujours écrit à
+   côté, aucune information ne repose sur la seule couleur. */
+.ic { display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  background: #55665d; flex: none; }
+.ic-beast { background: #f5a623; }
+.ic-aquatic { background: #3aa7d9; }
+.ic-plant { background: #6dbe45; }
+.ic-bird { background: #f27ba8; }
+.ic-bug { background: #e5473e; }
+.ic-reptile { background: #9b5de5; }
+.ic-dusk { background: #6b5b95; }
+.collect .ic, .pick .ic { width: 30px; height: 30px; }
+.unlock ul { list-style: none; margin: 0; padding: 0; }

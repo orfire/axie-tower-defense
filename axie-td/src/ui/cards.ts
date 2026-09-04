@@ -6,6 +6,45 @@ export const CLASS_FR: Record<string, string> = {
   bird: 'Oiseau', bug: 'Insecte', reptile: 'Reptile', dusk: 'Crépuscule',
 }
 
+/**
+ * Noms français des chimères.
+ *
+ * Les identifiants de `balance.json` sont en anglais et servaient de nom
+ * affiché : la fiche annonçait « wolf-aquatic-alpha » et la fiche du niveau
+ * l'aurait repris. Tout texte vu par le joueur est en français (contrainte
+ * globale du plan). Les qualificatifs collent au comportement réel de la
+ * chimère — cracheur pour un tir, cuirassé pour de l'armure, briseur pour un
+ * `line_breaker` — pour qu'un nom ne promette rien que les données ne tiennent.
+ * Un test vérifie qu'aucune chimère n'est oubliée.
+ */
+export const ENEMY_FR: Record<string, string> = {
+  'slime': 'Slime',
+  'slime-forest-a': 'Slime des bois',
+  'slime-forest-b': 'Slime véloce',
+  'slime-attack': 'Slime cracheur',
+  'slime-defense': 'Slime cuirassé',
+  'slime-support': 'Slime guérisseur',
+  'slime-fusion': 'Slime fusionné',
+  'wolf-gray': 'Loup gris',
+  'wolf-alpha': 'Loup alpha',
+  'wolf-aquatic': 'Loup des marais',
+  'wolf-aquatic-alpha': 'Alpha des marais',
+  'werewolf': 'Loup-garou',
+  'treant': 'Tréant',
+  'treant-fighter': 'Tréant briseur',
+  'treant-flowering': 'Tréant fleuri',
+  'dryad-fighter': 'Dryade guerrière',
+  'dryad-ranger': 'Dryade archère',
+  'dryad-mage': 'Dryade mage',
+  'bear-dad': 'Ours patriarche',
+  'bear-mom': 'Ourse matriarche',
+}
+
+/** Nom affiché d'une chimère. Repli sur l'identifiant si la table l'a oubliée. */
+export function enemyName(type: string): string {
+  return ENEMY_FR[type] ?? type
+}
+
 const PART_FR: Record<string, string> = {
   eyes: 'Yeux', ears: 'Oreilles', mouth: 'Bouche',
   horn: 'Corne', back: 'Dos', tail: 'Queue',
@@ -98,7 +137,7 @@ export function enemyCardHtml(type: string): string {
   const tier = e.tier === 'boss' ? 'Boss' : e.tier === 'miniboss' ? 'Mini-boss' : 'Ordinaire'
 
   return `
-    <h3 class="card-title"><i class="ic ic-${e.class}"></i> ${esc(type)}</h3>
+    <h3 class="card-title"><i class="ic ic-${e.class}"></i> ${esc(enemyName(type))}</h3>
     <p class="card-sub">${CLASS_FR[e.class]} · ${tier}</p>
     <ul class="stats">
       <li><span>PV</span><b>${e.hp}</b></li>

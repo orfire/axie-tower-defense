@@ -1,4 +1,5 @@
 import { BALANCE, axieDef } from '../data/load'
+import { CLASS_FR } from './cards'
 import { spentEnergy } from '../sim/placement'
 import { currentBudget, type World } from '../sim/world'
 
@@ -49,7 +50,7 @@ export class Tray {
         : tooExpensive ? `, trop cher, il reste ${left} d'énergie`
         : w.phase !== 'placement' ? ', vague en cours'
         : ''
-      const label = `${def.name}, ${cls}, coût ${cost}${etat}`
+      const label = `${def.name}, ${CLASS_FR[cls]}, coût ${cost}${etat}`
       if (slot.getAttribute('aria-label') !== label) slot.setAttribute('aria-label', label)
     })
   }
