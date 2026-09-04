@@ -3,3 +3,22 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: #1b221e; }
 body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
 #app { position: relative; width: 100vw; height: 100dvh; overflow: hidden; }
+
+.hud, .tray, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; color: #f3f1e8; }
+.hud { top: 0; height: 48px; justify-content: space-between; padding: 0 14px; background: #2b3a33; font-weight: 600; }
+.hud-hearts { color: #ff6b6b; letter-spacing: 2px; font-size: 18px; }
+.hud-right { display: flex; align-items: center; gap: 10px; }
+.hud-mute { width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,.12); color: #fff; font-size: 14px; }
+.tray { bottom: 64px; height: 96px; justify-content: space-evenly; padding: 0 8px; background: #354a41; }
+.slot { position: relative; width: 60px; height: 78px; border: 0; border-radius: 14px; background: rgba(255,255,255,.08); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; }
+.slot .cost { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: #ffd23f; color: #3a2a00; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.slot .ic { width: 40px; height: 40px; border-radius: 50%; background-size: cover; display: block; }
+.slot .nm { font-size: 10px; font-weight: 600; }
+.slot.is-posed { opacity: .55; }
+.slot.is-dim { opacity: .35; }
+.slot.is-dim .cost { background: #ff6b6b; color: #fff; }
+.bar { bottom: 0; height: 64px; gap: 10px; padding: 0 12px; background: #2b3a33; }
+.launch { flex: 1; height: 44px; border: 0; border-radius: 14px; background: #e0742b; color: #fff; font: inherit; font-size: 17px; font-weight: 600; }
+.launch:disabled { background: #55665d; color: rgba(255,255,255,.55); }
+.speed { width: 52px; height: 44px; border: 0; border-radius: 14px; background: rgba(255,255,255,.12); color: #fff; font: inherit; font-weight: 600; }
+.speed.is-on { background: #ffd23f; color: #3a2a00; }
