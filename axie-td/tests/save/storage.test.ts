@@ -1,4 +1,6 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
+import { LEVELS, MAX_STARS } from '../../src/data/load'
 import {
   emptySave, isLevelOpen, loadSave, recordResult, saveNow, totalStars, unlockedAxies,
 } from '../../src/save/storage'
@@ -58,5 +60,44 @@ describe('sauvegarde', () => {
   it('repart de zéro sur une sauvegarde illisible', () => {
     localStorage.setItem('axietd.save', '{ pas du json')
     expect(totalStars(loadSave())).toBe(0)
+  })
+
+  it('borne un score trafiqué au maximum d’un niveau', () => {
+    // Une sauvegarde est un fichier que le joueur peut ouvrir. Sans borne, y
+    // écrire 999 étoiles ouvrirait toute la collection, et la règle « aucun
+    // déblocage n'est stocké » ne protégerait plus de rien.
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: { 1: 999 } }))
+    const s = loadSave()
+    expect(s.stars['1']).toBe(3)
+    expect(totalStars(s)).toBe(3)
+  })
+
+  it('ignore un niveau qui n’existe pas', () => {
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: { 1: 2, 99: 3 } }))
+    const s = loadSave()
+    expect(s.stars['99']).toBeUndefined()
+    expect(totalStars(s)).toBe(2)
+  })
+
+  it('survit à un JSON valide mais de mauvaise forme', () => {
+    // Celui-ci ne lève rien : sans filtrage par champ, il traverserait le catch.
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: 'x', lastDraft: 7 }))
+    const s = loadSave()
+    expect(totalStars(s)).toBe(0)
+    expect(s.lastDraft).toEqual({})
+  })
+
+  it('ne garde d’un draft que des Axies existants', () => {
+    localStorage.setItem('axietd.save', JSON.stringify({
+      version: 1, stars: {}, lastDraft: { 1: ['olek', 'inexistant', 42] },
+    }))
+    expect(loadSave().lastDraft['1']).toEqual(['olek'])
+  })
+
+  it('ne dépasse jamais le total maximal, même trafiqué', () => {
+    const stars: Record<string, number> = {}
+    for (const l of LEVELS) stars[String(l.id)] = 99
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars }))
+    expect(totalStars(loadSave())).toBe(MAX_STARS)
   })
 })

@@ -1,4 +1,4 @@
-import { LEVELS, PLAYABLE } from '../data/load'
+import { BALANCE, LEVELS, PLAYABLE } from '../data/load'
 
 const KEY = 'axietd.save'
 
@@ -16,7 +16,49 @@ export function emptySave(): SaveData {
   return { version: 1, stars: {}, lastDraft: {}, speed2x: false, mute: false }
 }
 
-/** Une sauvegarde absente, vide ou illisible donne une partie neuve. */
+/** Score maximal d'un niveau, lu depuis les données plutôt que supposé. */
+const MAX_PER_LEVEL = Math.max(...Object.values(BALANCE.level.stars_by_lives))
+
+/**
+ * Ne retient que des scores plausibles.
+ *
+ * Une sauvegarde est un fichier texte que le joueur peut ouvrir et modifier.
+ * Sans ce filtre, y écrire 999 étoiles à un niveau ouvrirait toute la collection :
+ * la règle « aucun déblocage n'est stocké » ne protège de rien si le total dont
+ * ils dérivent n'est pas borné. Un identifiant de niveau inconnu est ignoré.
+ */
+function cleanStars(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  const connus = new Set(LEVELS.map((l) => String(l.id)))
+  for (const [id, valeur] of Object.entries(raw as Record<string, unknown>)) {
+    if (!connus.has(id)) continue
+    if (typeof valeur !== 'number' || !Number.isFinite(valeur)) continue
+    out[id] = Math.min(MAX_PER_LEVEL, Math.max(0, Math.floor(valeur)))
+  }
+  return out
+}
+
+/** Ne retient que des drafts faits d'Axies existants et jouables. */
+function cleanDrafts(raw: unknown): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  const connus = new Set(PLAYABLE.map((a) => a.id))
+  for (const [id, valeur] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(valeur)) continue
+    const ids = valeur.filter((x): x is string => typeof x === 'string' && connus.has(x))
+    if (ids.length > 0) out[id] = ids.slice(0, 5)
+  }
+  return out
+}
+
+/**
+ * Une sauvegarde absente, vide, illisible ou malformée donne une partie neuve.
+ *
+ * Un fichier peut très bien être du JSON valide et avoir la mauvaise forme :
+ * `{"version":1,"stars":"x"}` ne lève rien et traverserait le `catch` sans être
+ * vu. Chaque champ est donc filtré, pas seulement la version.
+ */
 export function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(KEY)
@@ -25,10 +67,10 @@ export function loadSave(): SaveData {
     if (parsed.version !== 1) return emptySave()
     return {
       version: 1,
-      stars: parsed.stars ?? {},
-      lastDraft: parsed.lastDraft ?? {},
-      speed2x: parsed.speed2x ?? false,
-      mute: parsed.mute ?? false,
+      stars: cleanStars(parsed.stars),
+      lastDraft: cleanDrafts(parsed.lastDraft),
+      speed2x: parsed.speed2x === true,
+      mute: parsed.mute === true,
     }
   } catch {
     return emptySave()
