@@ -20,6 +20,7 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
 - **Les JSON de `data/` ne se modifient jamais à la main.** On modifie `tools/gen-data.mjs` puis on relance `node tools/gen-data.mjs`.
 - **Grille 7 colonnes × 10 lignes.** Une cellule est `[col, row]`, `col` de 0 à 6, `row` de 0 à 9.
 - **Adjacence des auras : les 4 cases orthogonales uniquement.** Jamais les diagonales.
+- **Ne jamais choisir une case de test à l'œil.** Quatre fois dans ce projet, une case écrite à la main s'est révélée être sur le chemin, où une classe à distance est refusée : l'Axie ne se pose pas, rien n'échoue, et la cause se cherche ailleurs. Lire le fichier du niveau, ou chercher une case dont le type est celui qu'on veut.
 - **Portrait uniquement.** Pas de zoom, pas de pan, un seul doigt.
 - **Aucune information transmise par la couleur seule** (exigence d'accessibilité de l'organisateur).
 - **Français** pour tout texte affiché au joueur. Anglais pour les identifiants de code.
@@ -3927,11 +3928,13 @@ const layout = computeLayout(390, 780)
 describe('aimantation', () => {
   it('aimante sur la case valide la plus proche du doigt', () => {
     const w = createWorld(1)
-    const target = [4, 5] as const
+    // [3, 4] est en plaine au niveau 1. Ne pas choisir une case à l'œil :
+    // [4, 5] et [3, 3] sont sur le chemin, où une classe à distance est refusée.
+    const target = [3, 4] as const
     const p = unitToPx(layout, target[0] + 0.5, target[1] + 0.5)
     // Le doigt tombe 12 px à côté du centre : ça doit quand même viser cette case.
     const cell = nearestValidCell(w, 'momo', p.x + 12, p.y - 12, layout)
-    expect(cell).toEqual([4, 5])
+    expect(cell).toEqual([3, 4])
   })
 
   it('refuse le chemin pour une classe à distance et propose la case valide voisine', () => {
@@ -3945,10 +3948,10 @@ describe('aimantation', () => {
 
   it('ne propose pas une case occupée', () => {
     const w = createWorld(1)
-    place(w, 'momo', [4, 5])
-    const p = unitToPx(layout, 4.5, 5.5)
+    place(w, 'momo', [3, 4])
+    const p = unitToPx(layout, 3.5, 4.5)
     const cell = nearestValidCell(w, 'puffy', p.x, p.y, layout)
-    expect(cell).not.toEqual([4, 5])
+    expect(cell).not.toEqual([3, 4])
   })
 
   it('ne propose rien loin du plateau', () => {
