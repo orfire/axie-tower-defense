@@ -16,7 +16,8 @@ import { Sfx } from './audio/sfx'
 import { CardOverlay } from './ui/cards'
 import { DragDrop, type DragState } from './ui/dragdrop'
 import { Hud } from './ui/hud'
-import { drawAuraLinks, drawAuraZones, drawOverlay } from './ui/overlay'
+import { Onboarding, hintCell } from './ui/onboarding'
+import { drawAuraLinks, drawAuraZones, drawHintCell, drawOverlay } from './ui/overlay'
 import { Router, type ScreenId } from './ui/router'
 import {
   briefHtml, collectionHtml, defeatHtml, draftHtml, mapHtml, resultHtml, titleHtml,
@@ -95,9 +96,12 @@ host.append(gameUi)
 // pendant le geste.
 const auraZonesGfx = new Container()
 const overlayGfx = new Container()
+// L'anneau d'onboarding en dernier : il désigne une case précise et doit rester
+// lisible par-dessus les zones d'aura comme par-dessus les cases valides.
+const hintCellGfx = new Container()
 // Les zones d'aura d'abord : la surbrillance des cases valides pendant un
 // glissement doit rester lisible par-dessus elles.
-game.overlayLayer.addChild(auraZonesGfx, overlayGfx)
+game.overlayLayer.addChild(auraZonesGfx, overlayGfx, hintCellGfx)
 const auraLinksGfx = new Container()
 const dragLayer = new Container()
 game.fxLayer.addChild(auraLinksGfx, dragLayer)
@@ -128,6 +132,21 @@ tray.mount(gameUi)
 
 const cards = new CardOverlay()
 cards.mount(host)
+
+/**
+ * Bulles d'onboarding des niveaux 1 et 2 (GDD §12), montées dans le calque du
+ * jeu pour disparaître avec lui dès qu'on quitte le plateau.
+ *
+ * Le niveau 3 en a une lui aussi, mais elle vit sur l'écran de draft : elle est
+ * rendue par `draftHtml` et ne passe jamais par cet objet, qui n'existe que
+ * tant qu'un monde existe. C'est ce que dit le drapeau `onboarding` des
+ * données, vrai aux seuls niveaux 1 et 2.
+ */
+const onboarding = new Onboarding()
+onboarding.mount(gameUi)
+
+/** Un battement complet de l'anneau qui désigne une case, en millisecondes. */
+const HINT_PULSE_MS = 1200
 
 // Flash rouge plein écran quand une chimère sort : pas de son ni de VFX kit
 // dédiés à une fuite, juste un signal d'écran (et une vibration sur mobile).
@@ -188,6 +207,17 @@ function refreshChrome(): void {
   drawOverlay(overlayGfx, w, game.layout, dragDrop.state)
   drawAuraZones(auraZonesGfx, w, game.layout)
   drawAuraLinks(auraLinksGfx, w, game.layout)
+
+  // L'onboarding est ici et pas seulement dans le ticker : une bulle doit
+  // s'effacer au geste, pas à la frame suivante. `refreshChrome` est justement
+  // rappelé au relâchement d'un glissé et au lancement d'une vague.
+  if (!w.level.onboarding) {
+    drawHintCell(hintCellGfx, null, game.layout, 0)
+    return
+  }
+  onboarding.update(w)
+  const phase = (game.app.ticker.lastTime % HINT_PULSE_MS) / HINT_PULSE_MS
+  drawHintCell(hintCellGfx, hintCell(onboarding.current ?? undefined, w.level), game.layout, phase)
 }
 
 // --- Glisser-déposer ---------------------------------------------------------
@@ -372,6 +402,9 @@ async function startPlay(levelId: number, draft: string[]): Promise<void> {
   const token = ++playToken
   loading = true
   ended = false
+  // Un niveau rejoué réaffiche ses bulles : la disposition est à revoir, et
+  // c'est justement là que le rappel sert.
+  onboarding.reset()
   session.begin(levelId, draft)
   render()
   await preload(session.draft, session.announcedEnemies(levelId))

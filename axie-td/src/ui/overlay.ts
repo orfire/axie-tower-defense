@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { BALANCE, axieDef } from '../data/load'
+import type { Cell } from '../data/types'
 import { PALETTE } from '../render/app'
 import { COLS, ROWS, cellToPx, unitToPx, type Layout } from '../render/layout'
 import { auraSources } from '../sim/auras'
@@ -137,6 +138,30 @@ export function drawOverlay(target: Container, world: World, layout: Layout, dra
     g.beginFill(PALETTE.range, 0.16).drawCircle(p.x, p.y, range * c).endFill()
     g.lineStyle(2, PALETTE.range, 0.75).drawCircle(p.x, p.y, range * c).lineStyle(0)
   }
+}
+
+/**
+ * Anneau battant sur la case désignée par une bulle d'onboarding (GDD §12 :
+ * « une case du chemin clignote »).
+ *
+ * Sans lui, « glisse Buba sur le chemin » ne montre aucun endroit : le premier
+ * geste du jeu se devine. `phase` va de 0 à 1 et vient de la boucle de rendu —
+ * la simulation, elle, n'a pas de temps réel à donner.
+ *
+ * Blanc et non jaune : le jaune désigne déjà la sortie du chemin.
+ */
+export function drawHintCell(
+  target: Container, cell: Cell | null, layout: Layout, phase: number,
+): void {
+  const g = reusableGraphics(target)
+  if (!cell) return
+  const c = layout.cell
+  const t = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2)
+  const inset = c * (0.05 + 0.06 * t)
+  const p = cellToPx(layout, cell[0], cell[1])
+  g.lineStyle(Math.max(2, c * 0.055), PALETTE.range, 0.45 + 0.45 * t)
+    .drawRoundedRect(p.x + inset, p.y + inset, c - inset * 2, c - inset * 2, c * 0.2)
+    .lineStyle(0)
 }
 
 /** Portée de base d'un Axie, posé ou encore dans le bac. */

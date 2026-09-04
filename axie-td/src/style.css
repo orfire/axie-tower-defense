@@ -53,6 +53,26 @@ body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user
 .game-ui > * { pointer-events: auto; }
 .quit { font-size: 18px; }
 
+/* --- Onboarding (tâche 18) ------------------------------------------------ */
+
+/* Bulle de plateau. `pointer-events: none` est obligatoire : elle vit dans
+   `.game-ui`, dont les enfants reprennent le doigt, et elle se pose en plein
+   milieu du plateau — sans ça elle avalerait le glissé qu'elle demande de faire.
+   Elle ne dit rien par la couleur : tout est dans le texte. */
+.hint-bubble { position: absolute; left: 50%; transform: translateX(-50%); z-index: 6;
+  pointer-events: none; max-width: 260px; padding: 10px 12px; border-radius: 14px;
+  background: #fff; color: #22302a; font-size: 13px; font-weight: 600; line-height: 1.35;
+  box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+.hint-bubble[hidden] { display: none !important; }
+.hint-bubble[data-anchor="launch"] { bottom: 76px; }
+.hint-bubble[data-anchor="board"], .hint-bubble[data-anchor="cell"] { top: 64px; }
+
+/* Bulle de l'écran de draft : dans le flux, pas en surimpression.
+   Sélecteur en deux classes pour passer devant `.screen p`, plus spécifique. */
+.screen .draft-hint { border-left: 3px solid #ffd23f; padding: 8px 12px;
+  border-radius: 0 12px 12px 0; background: rgba(255,210,63,.12); color: #f3f1e8;
+  font-size: 13.5px; font-weight: 600; }
+
 /* `touch-action: none` sur le body empêche tout défilement tactile : les écrans
    le rouvrent sur l'axe vertical, sinon une collection de 19 Axies est
    inatteignable au doigt. Même raison pour les fiches, qui débordent souvent. */

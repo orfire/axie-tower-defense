@@ -1,6 +1,7 @@
 import { LEVELS, MAX_STARS, PLAYABLE, axieDef, levelDef } from '../data/load'
 import type { LevelDef } from '../data/types'
 import { CLASS_FR, axieCardHtml, enemyName } from './cards'
+import { draftHint } from './onboarding'
 import { isLevelOpen, nextUnlock, totalStars, unlockedAxies, type SaveData } from '../save/storage'
 import type { Session } from '../game/session'
 
@@ -94,6 +95,14 @@ export function briefHtml(session: Session, levelId: number): string {
 export function draftHtml(session: Session, levelId: number, picked: string[]): string {
   const forced = levelDef(levelId).draft.forced
   const open = unlockedAxies(session.save)
+
+  /*
+   * Bulle unique de l'écran de draft (GDD §12), au niveau 3, le premier où
+   * l'équipe se choisit. Elle s'efface dès que le niveau est réussi : le joueur
+   * a fait le geste, on ne le lui redemande pas. Après une défaite elle revient,
+   * ce qui est précisément le moment où le conseil sert.
+   */
+  const hint = (session.save.stars[String(levelId)] ?? 0) === 0 ? draftHint(levelId) : null
   const slots = Array.from({ length: 5 }, (_, i) => {
     const id = picked[i]
     if (!id) return `<span class="pick is-empty">${i + 1}</span>`
@@ -108,6 +117,7 @@ export function draftHtml(session: Session, levelId: number, picked: string[]): 
       <span>${forced ? 'Équipe imposée' : 'Choisis 5 Axies'}</span></header>
     <div class="picks">${slots}</div>
     ${forced ? '<p class="hint">Ce niveau te prête une équipe. Le choix s’ouvre au niveau 3.</p>' : ''}
+    ${hint ? `<p class="draft-hint" role="status">${esc(hint.text)}</p>` : ''}
     <div class="collection">${open.map((id) => collectTile(id, picked.includes(id))).join('')}</div>
     <button type="button" class="cta" data-play="${levelId}" ${picked.length === 0 ? 'disabled' : ''}>Jouer</button>
   </div>`
