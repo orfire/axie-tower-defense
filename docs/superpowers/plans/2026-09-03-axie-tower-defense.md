@@ -3767,8 +3767,14 @@ export class WorldView {
     v.bar.beginFill(color).drawRoundedRect(-width / 2, y, width * Math.max(0, ratio), h, h / 2).endFill()
   }
 
-  /** Met l'affichage en accord avec l'état du monde. Appelé à chaque frame. */
-  sync(world: World): void {
+  /**
+   * Met l'affichage en accord avec l'état du monde. Appelé à chaque frame.
+   *
+   * `draggedUid` désigne l'Axie que le joueur tient en main. Il reste dans la
+   * simulation à sa case d'origine, mais on le masque ici : sinon il apparaît
+   * deux fois, figé sur son ancienne case et en fantôme sous le doigt.
+   */
+  sync(world: World, draggedUid = -1): void {
     const layout = this.game.layout
     const c = layout.cell
     const seen = new Set<number>()
@@ -3776,6 +3782,7 @@ export class WorldView {
     for (const a of world.axies) {
       seen.add(a.uid)
       const v = this.ensure(a.uid, `axie:${a.axieId}`, AXIE_CELLS)
+      v.root.visible = a.uid !== draggedUid
       const p = unitToPx(layout, center(a.cell).x, center(a.cell).y)
       // Les squelettes ont leur origine aux pieds : on pose donc l'unité sur le
       // bas de sa case plutôt qu'au centre, sinon elle flotte au-dessus.
@@ -4021,9 +4028,18 @@ export type DragEvents = {
   onUpdate: (state: DragState) => void
 }
 
-/** Gestion du glisser-déposer au doigt et à la souris, un seul point de contact. */
+/**
+ * Glisser-déposer au doigt et à la souris, un seul point de contact.
+ *
+ * Le pointeur qui a commencé le geste est mémorisé et lui seul est écouté :
+ * sans ça, un second doigt posé n'importe où pendant un glissement déplace ou
+ * termine celui en cours. Sur mobile c'est la paume qui effleure l'écran.
+ */
 export class DragDrop {
   state: DragState = { kind: 'none' }
+  /** Identifiant du pointeur qui mène le geste, -1 hors glissement. */
+  private pointerId = -1
+  private captured?: HTMLElement
 
   constructor(private readonly ev: DragEvents) {}
 
@@ -4042,9 +4058,35 @@ export class DragDrop {
   }
 
   /** Démarre un glissement depuis le bac. Appelé par `Tray`. */
-  startFromTray(axieId: string, px: number, py: number): void {
+  startFromTray(axieId: string, px: number, py: number, e?: PointerEvent): void {
+    if (this.state.kind !== 'none') return // un geste est déjà en cours
+    this.claim(e)
     this.state = { kind: 'fromTray', axieId, px, py, cell: null }
     this.recompute()
+  }
+
+  /** Retient le pointeur menant et lui demande la capture, quand elle est possible. */
+  private claim(e?: PointerEvent): void {
+    if (!e) return
+    this.pointerId = e.pointerId
+    const el = e.currentTarget instanceof HTMLElement ? e.currentTarget : null
+    // La capture garantit de recevoir le relâchement même si le doigt sort de la
+    // page. Sans elle, un geste interrompu hors fenêtre laisse l'état bloqué.
+    try {
+      el?.setPointerCapture(e.pointerId)
+      this.captured = el ?? undefined
+    } catch { /* capture indisponible, le suivi par identifiant suffit */ }
+  }
+
+  private release(): void {
+    try { if (this.pointerId >= 0) this.captured?.releasePointerCapture(this.pointerId) } catch { /* ignoré */ }
+    this.captured = undefined
+    this.pointerId = -1
+  }
+
+  /** Vrai si l'événement vient d'un autre doigt que celui qui mène le geste. */
+  private foreign(e: PointerEvent): boolean {
+    return this.pointerId >= 0 && e.pointerId !== this.pointerId
   }
 
   private down = (e: PointerEvent) => {
@@ -4058,25 +4100,29 @@ export class DragDrop {
     const w = this.ev.getWorld()
     const a = w.axies.find((x) => x.uid === uid)
     if (!a) return
+    this.claim(e)
     this.state = { kind: 'fromBoard', uid, axieId: a.axieId, px: e.clientX, py: e.clientY, cell: a.cell }
     this.recompute()
   }
 
   private move = (e: PointerEvent) => {
-    if (this.state.kind === 'none') return
+    if (this.state.kind === 'none' || this.foreign(e)) return
     this.state.px = e.clientX
     this.state.py = e.clientY
     this.recompute()
   }
 
-  private up = () => {
-    if (this.state.kind === 'none') return
+  private up = (e: PointerEvent) => {
+    if (this.state.kind === 'none' || this.foreign(e)) return
     this.ev.onDrop(this.state)
+    this.release()
     this.state = { kind: 'none' }
     this.ev.onUpdate(this.state)
   }
 
-  private cancel = () => {
+  private cancel = (e: PointerEvent) => {
+    if (this.state.kind === 'none' || this.foreign(e)) return
+    this.release()
     this.state = { kind: 'none' }
     this.ev.onUpdate(this.state)
   }
@@ -4119,12 +4165,37 @@ import type { DragState } from './dragdrop'
  * Les liserés portent aussi l'icône de la classe côté HTML : jamais d'information
  * transmise par la couleur seule (exigence d'accessibilité).
  */
-export function drawOverlay(target: Container, world: World, layout: Layout, drag: DragState): void {
-  target.removeChildren()
+/**
+ * Un seul objet Graphics, réutilisé et vidé plutôt que recréé.
+ * Ces fonctions tournent à chaque frame et à chaque mouvement du doigt :
+ * `removeChildren` détache sans libérer la géométrie GPU, si bien qu'en recréer
+ * un à chaque appel épuise la mémoire de la carte en quelques minutes de jeu.
+ */
+function reusableGraphics(target: Container): Graphics {
+  const first = target.children[0]
+  if (first instanceof Graphics) {
+    // Les enfants ajoutés après le Graphics, comme les badges de classe de la
+    // tâche 19, sont reconstruits à chaque appel : on les libère ici.
+    for (const extra of target.removeChildren(1)) extra.destroy()
+    first.clear()
+    return first
+  }
+  for (const old of target.removeChildren()) old.destroy()
   const g = new Graphics()
-  const c = layout.cell
+  target.addChild(g)
+  return g
+}
 
-  // Liserés d'aura, visibles en permanence entre voisins qui se donnent une aura.
+/**
+ * Liserés d'aura, dessinés AU-DESSUS des unités.
+ * Ils vivent dans la couche d'effets et non dans celle des surbrillances, sinon
+ * les sprites les recouvrent entièrement : deux Axies voisins se touchent presque,
+ * et le liseré tombe pile derrière eux. C'est le seul indice non coloré d'une
+ * mécanique centrale du jeu, il doit rester visible.
+ */
+export function drawAuraLinks(target: Container, world: World, layout: Layout): void {
+  const g = reusableGraphics(target)
+  const c = layout.cell
   for (const a of world.axies) {
     if (a.ko) continue
     for (const src of auraSources(world, a)) {
@@ -4134,13 +4205,20 @@ export function drawOverlay(target: Container, world: World, layout: Layout, dra
       const horizontal = from.y === to.y
       const w = horizontal ? c * 0.07 : c * 0.5
       const h = horizontal ? c * 0.5 : c * 0.07
-      g.beginFill(PALETTE.classes[src.cls], 0.9)
+      g.beginFill(PALETTE.classes[src.cls], 0.95)
         .drawRoundedRect(mid.x - w / 2, mid.y - h / 2, w, h, Math.min(w, h) / 2)
         .endFill()
     }
   }
+}
 
-  if (drag.kind === 'none') { target.addChild(g); return }
+/** Cases valides et cercle de portée, dessinés SOUS les unités. */
+export function drawOverlay(target, world, layout, drag): void   // cases valides et portée, SOUS les unités
+drawAuraLinks(target, world, layout): void       // liserés d'aura, AU-DESSUS des unités {
+  const g = reusableGraphics(target)
+  const c = layout.cell
+
+  if (drag.kind === 'none') return
 
   // Cases valides pour l'Axie en main.
   const movingUid = drag.kind === 'fromBoard' ? drag.uid : -1
@@ -4166,8 +4244,6 @@ export function drawOverlay(target: Container, world: World, layout: Layout, dra
     g.beginFill(PALETTE.range, 0.16).drawCircle(p.x, p.y, range * c).endFill()
     g.lineStyle(2, PALETTE.range, 0.75).drawCircle(p.x, p.y, range * c).lineStyle(0)
   }
-
-  target.addChild(g)
 }
 
 /** Portée de base d'un Axie, posé ou encore dans le bac. */
@@ -4234,12 +4310,12 @@ import { currentBudget, type World } from '../sim/world'
 /** Bac du draft : les 5 Axies choisis, leur coût, leur état. */
 export class Tray {
   readonly el = document.createElement('div')
-  private pick?: (axieId: string, px: number, py: number) => void
+  private pick?: (axieId: string, px: number, py: number, e: PointerEvent) => void
 
   constructor() { this.el.className = 'tray' }
 
   mount(parent: HTMLElement): void { parent.append(this.el) }
-  onPick(cb: (axieId: string, px: number, py: number) => void): void { this.pick = cb }
+  onPick(cb: (axieId: string, px: number, py: number, e: PointerEvent) => void): void { this.pick = cb }
 
   update(w: World, draft: string[]): void {
     const left = currentBudget(w) - spentEnergy(w)
@@ -4254,11 +4330,17 @@ export class Tray {
       slot.type = 'button'
       slot.className = `slot cls-${cls}${posed ? ' is-posed' : ''}${tooExpensive ? ' is-dim' : ''}`
       slot.disabled = w.phase !== 'placement' || tooExpensive || posed
-      slot.setAttribute('aria-label', `${def.name}, ${cls}, coût ${cost}${posed ? ', déjà posé' : ''}`)
+      // L'étiquette dit pourquoi le bouton est inactif : « indisponible » seul
+      // ne renseigne pas, et la couleur ne doit jamais porter l'information.
+      const etat = posed ? ', déjà posé'
+        : tooExpensive ? `, trop cher, il reste ${left} d'énergie`
+        : w.phase !== 'placement' ? ', vague en cours'
+        : ''
+      slot.setAttribute('aria-label', `${def.name}, ${cls}, coût ${cost}${etat}`)
       slot.innerHTML = `<span class="cost">${cost}</span><i class="ic ic-${cls}"></i><span class="nm">${def.name}</span>`
       slot.addEventListener('pointerdown', (e) => {
         if (slot.disabled) return
-        this.pick?.(id, e.clientX, e.clientY)
+        this.pick?.(id, e.clientX, e.clientY, e)
       })
       return slot
     }))
@@ -4291,7 +4373,13 @@ export class Tray {
 
 - [ ] **Étape 8 : Vérifier au navigateur**
 
-Câbler `Hud`, `Tray`, `DragDrop` et `drawOverlay` dans `src/main.ts` en suivant le modèle de la tâche 12, avec un draft en dur `['olek', 'momo', 'puffy', 'buba', 'pomodoro']` et un bouton « Lancer la vague » qui appelle `startWave`.
+Câbler `Hud`, `Tray`, `DragDrop`, `drawOverlay` et `drawAuraLinks` dans `src/main.ts`, avec un draft en dur `['olek', 'momo', 'puffy', 'buba', 'pomodoro']` et un bouton « Lancer la vague » qui appelle `startWave`.
+
+Trois points de câblage à ne pas manquer :
+
+- `drawOverlay` va dans `game.overlayLayer`, sous les unités. `drawAuraLinks` va dans `game.fxLayer`, au-dessus : autrement les sprites recouvrent entièrement le liseré, qui est le seul indice non coloré d'une mécanique centrale.
+- `view.sync(world, draggedUid)` reçoit l'identifiant de l'Axie tenu en main, `-1` sinon, pour qu'il ne s'affiche pas à la fois sur son ancienne case et sous le doigt.
+- Le fantôme ne concerne que les glissements venus du bac. Un Axie déjà posé est masqué par `sync` et suivi par le fantôme, sans doublon.
 
 ```bash
 cd axie-td && npm run dev
@@ -6622,7 +6710,8 @@ consumeEvents(world: World, ctx: EffectCtx): void  // vide world.events
 nearestValidCell(w, axieId, px, py, layout, movingUid?): Cell | null
 type DragState = { kind: 'none' } | { kind: 'fromTray'; axieId; px; py; cell } | { kind: 'fromBoard'; uid; axieId; px; py; cell }
 class DragDrop { state; attach(el); detach(el); startFromTray(axieId, px, py) }
-drawOverlay(target: Container, world: World, layout: Layout, drag: DragState): void
+drawOverlay(target, world, layout, drag): void   // cases valides et portée, SOUS les unités
+drawAuraLinks(target, world, layout): void       // liserés d'aura, AU-DESSUS des unités
 class Hud { el; muteBtn; mount(parent); update(w: World) }
 class Tray { el; mount(parent); onPick(cb); update(w: World, draft: string[]) }
 CLASS_FR: Record<string, string>
