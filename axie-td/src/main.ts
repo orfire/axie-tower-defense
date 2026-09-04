@@ -11,7 +11,7 @@ import { Container } from 'pixi.js'
 import { Hud } from './ui/hud'
 import { Tray } from './ui/tray'
 import { DragDrop, type DragState } from './ui/dragdrop'
-import { drawOverlay } from './ui/overlay'
+import { drawAuraLinks, drawOverlay } from './ui/overlay'
 import { pxToCell, unitToPx } from './render/layout'
 
 const host = document.querySelector<HTMLElement>('#app')
@@ -25,12 +25,18 @@ const world = createWorld(1)
 const game = new GameApp(host)
 const view = new WorldView(game)
 
-// Deux conteneurs distincts dans la couche de surbrillance : `drawOverlay` vide et
-// redessine le premier à chaque appel (`removeChildren`), donc le fantôme du glissé
-// vit dans le second pour ne pas être effacé à chaque frame.
+// `drawOverlay` (cases valides, cercle de portée) va sous les unités : la
+// couche de surbrillance. `drawAuraLinks` va au-dessus, dans la couche
+// d'effets, sinon les sprites recouvrent entièrement le liseré — deux Axies
+// voisins se touchent presque, il tomberait pile derrière eux (constaté en
+// relecture de la tâche 13). Le fantôme du glissé vit dans la même couche
+// d'effets, après les liserés, pour rester visible par-dessus tout le reste
+// pendant le geste.
 const overlayGfx = new Container()
+game.overlayLayer.addChild(overlayGfx)
+const auraLinksGfx = new Container()
 const dragLayer = new Container()
-game.overlayLayer.addChild(overlayGfx, dragLayer)
+game.fxLayer.addChild(auraLinksGfx, dragLayer)
 
 const redraw = () => drawBoard(game.boardLayer, world.board, game.layout)
 game.onResize(redraw)
@@ -77,6 +83,7 @@ function refreshChrome(): void {
   tray.update(world, DRAFT)
   launchBtn.disabled = world.phase !== 'placement'
   drawOverlay(overlayGfx, world, game.layout, dragDrop.state)
+  drawAuraLinks(auraLinksGfx, world, game.layout)
 }
 
 // --- Glisser-déposer ---------------------------------------------------------
@@ -84,9 +91,10 @@ function refreshChrome(): void {
 /**
  * Fantôme du glissé : l'Axie tiré du bac n'est pas encore dans la simulation,
  * `WorldView` ne peut donc pas l'afficher (note d'architecture de la tâche 13).
- * Un Axie repris sur le plateau reste lui affiché par `WorldView` à sa case
- * d'origine pendant le geste ; seules les cases valides et le cercle de portée
- * bougent, ce qui évite de dupliquer son affichage sans toucher à `view.ts`.
+ * Le fantôme suit tout glissement, qu'il vienne du bac ou d'un Axie déjà posé :
+ * pas besoin de distinguer les deux ici. Pour un Axie déjà posé, c'est
+ * `view.sync(world, draggedUid)` qui masque sa case d'origine pendant le
+ * geste, pour que le fantôme reste la seule copie visible.
  */
 let ghost: { axieId: string; spine: Spine } | null = null
 
@@ -124,6 +132,11 @@ function updateGhost(state: DragState): void {
   spine.position.set(p.x, p.y + c * 0.42)
 }
 
+/** Axie tenu en main, -1 hors glissement. Sert à le masquer dans `WorldView`. */
+function draggedUid(): number {
+  return dragDrop.state.kind === 'fromBoard' ? dragDrop.state.uid : -1
+}
+
 const dragDrop = new DragDrop({
   getWorld: () => world,
   getLayout: () => game.layout,
@@ -153,8 +166,8 @@ const dragDrop = new DragDrop({
 })
 dragDrop.attach(game.app.view as HTMLCanvasElement)
 
-tray.onPick((axieId, px, py) => {
-  dragDrop.startFromTray(axieId, px, py)
+tray.onPick((axieId, px, py, e) => {
+  dragDrop.startFromTray(axieId, px, py, e)
 })
 
 refreshChrome()
@@ -166,6 +179,6 @@ game.app.ticker.add(() => {
   acc += (game.app.ticker.deltaMS / 1000) * speedMult
   while (acc >= DT) { step(world); acc -= DT }
   world.events.length = 0
-  view.sync(world)
+  view.sync(world, draggedUid())
   refreshChrome()
 })

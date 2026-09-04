@@ -5,12 +5,12 @@ import { currentBudget, type World } from '../sim/world'
 /** Bac du draft : les 5 Axies choisis, leur coût, leur état. */
 export class Tray {
   readonly el = document.createElement('div')
-  private pick?: (axieId: string, px: number, py: number) => void
+  private pick?: (axieId: string, px: number, py: number, e: PointerEvent) => void
 
   constructor() { this.el.className = 'tray' }
 
   mount(parent: HTMLElement): void { parent.append(this.el) }
-  onPick(cb: (axieId: string, px: number, py: number) => void): void { this.pick = cb }
+  onPick(cb: (axieId: string, px: number, py: number, e: PointerEvent) => void): void { this.pick = cb }
 
   update(w: World, draft: string[]): void {
     const left = currentBudget(w) - spentEnergy(w)
@@ -25,11 +25,17 @@ export class Tray {
       slot.type = 'button'
       slot.className = `slot cls-${cls}${posed ? ' is-posed' : ''}${tooExpensive ? ' is-dim' : ''}`
       slot.disabled = w.phase !== 'placement' || tooExpensive || posed
-      slot.setAttribute('aria-label', `${def.name}, ${cls}, coût ${cost}${posed ? ', déjà posé' : ''}`)
+      // L'étiquette dit pourquoi le bouton est inactif : « indisponible » seul
+      // ne renseigne pas, et la couleur ne doit jamais porter l'information.
+      const etat = posed ? ', déjà posé'
+        : tooExpensive ? `, trop cher, il reste ${left} d'énergie`
+        : w.phase !== 'placement' ? ', vague en cours'
+        : ''
+      slot.setAttribute('aria-label', `${def.name}, ${cls}, coût ${cost}${etat}`)
       slot.innerHTML = `<span class="cost">${cost}</span><i class="ic ic-${cls}"></i><span class="nm">${def.name}</span>`
       slot.addEventListener('pointerdown', (e) => {
         if (slot.disabled) return
-        this.pick?.(id, e.clientX, e.clientY)
+        this.pick?.(id, e.clientX, e.clientY, e)
       })
       return slot
     }))

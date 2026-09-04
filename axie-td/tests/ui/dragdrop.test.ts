@@ -9,8 +9,8 @@ const layout = computeLayout(390, 780)
 describe('aimantation', () => {
   it('aimante sur la case valide la plus proche du doigt', () => {
     const w = createWorld(1)
-    // [3, 4] est en plaine sur le niveau 1 (vérifié contre data/levels/01.json) :
-    // il faut une case valide pour Momo (Oiseau, à distance), pas une case de chemin.
+    // [3, 4] est en plaine au niveau 1. Ne pas choisir une case à l'œil :
+    // [4, 5] et [3, 3] sont sur le chemin, où une classe à distance est refusée.
     const target = [3, 4] as const
     const p = unitToPx(layout, target[0] + 0.5, target[1] + 0.5)
     // Le doigt tombe 12 px à côté du centre : ça doit quand même viser cette case.

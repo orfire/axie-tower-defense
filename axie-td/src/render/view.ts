@@ -67,8 +67,13 @@ export class WorldView {
     v.bar.beginFill(color).drawRoundedRect(-width / 2, y, width * Math.max(0, ratio), h, h / 2).endFill()
   }
 
-  /** Met l'affichage en accord avec l'état du monde. Appelé à chaque frame. */
-  sync(world: World): void {
+  /**
+   * Met l'affichage en accord avec l'état du monde. Appelé à chaque frame.
+   * `draggedUid` est l'Axie tenu en main, -1 hors glissement : sa case d'origine
+   * est masquée pendant le geste, sinon il s'affiche à la fois là et sous le doigt
+   * (le fantôme du glissé, dessiné par ailleurs, en devient un doublon).
+   */
+  sync(world: World, draggedUid = -1): void {
     const layout = this.game.layout
     const c = layout.cell
     const seen = new Set<number>()
@@ -76,6 +81,8 @@ export class WorldView {
     for (const a of world.axies) {
       seen.add(a.uid)
       const v = this.ensure(a.uid, `axie:${a.axieId}`, AXIE_CELLS)
+      if (a.uid === draggedUid) { v.root.visible = false; continue }
+      v.root.visible = true
       const p = unitToPx(layout, center(a.cell).x, center(a.cell).y)
       // Les squelettes ont leur origine aux pieds : on pose donc l'unité sur le
       // bas de sa case plutôt qu'au centre, sinon elle flotte au-dessus.

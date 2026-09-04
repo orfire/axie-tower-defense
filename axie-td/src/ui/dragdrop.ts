@@ -47,9 +47,18 @@ export type DragEvents = {
   onUpdate: (state: DragState) => void
 }
 
-/** Gestion du glisser-déposer au doigt et à la souris, un seul point de contact. */
+/**
+ * Glisser-déposer au doigt et à la souris, un seul point de contact.
+ *
+ * Le pointeur qui a commencé le geste est mémorisé et lui seul est écouté :
+ * sans ça, un second doigt posé n'importe où pendant un glissement déplace ou
+ * termine celui en cours. Sur mobile c'est la paume qui effleure l'écran.
+ */
 export class DragDrop {
   state: DragState = { kind: 'none' }
+  /** Identifiant du pointeur qui mène le geste, -1 hors glissement. */
+  private pointerId = -1
+  private captured?: HTMLElement
 
   constructor(private readonly ev: DragEvents) {}
 
@@ -68,9 +77,35 @@ export class DragDrop {
   }
 
   /** Démarre un glissement depuis le bac. Appelé par `Tray`. */
-  startFromTray(axieId: string, px: number, py: number): void {
+  startFromTray(axieId: string, px: number, py: number, e?: PointerEvent): void {
+    if (this.state.kind !== 'none') return // un geste est déjà en cours
+    this.claim(e)
     this.state = { kind: 'fromTray', axieId, px, py, cell: null }
     this.recompute()
+  }
+
+  /** Retient le pointeur menant et lui demande la capture, quand elle est possible. */
+  private claim(e?: PointerEvent): void {
+    if (!e) return
+    this.pointerId = e.pointerId
+    const el = e.currentTarget instanceof HTMLElement ? e.currentTarget : null
+    // La capture garantit de recevoir le relâchement même si le doigt sort de la
+    // page. Sans elle, un geste interrompu hors fenêtre laisse l'état bloqué.
+    try {
+      el?.setPointerCapture(e.pointerId)
+      this.captured = el ?? undefined
+    } catch { /* capture indisponible, le suivi par identifiant suffit */ }
+  }
+
+  private release(): void {
+    try { if (this.pointerId >= 0) this.captured?.releasePointerCapture(this.pointerId) } catch { /* ignoré */ }
+    this.captured = undefined
+    this.pointerId = -1
+  }
+
+  /** Vrai si l'événement vient d'un autre doigt que celui qui mène le geste. */
+  private foreign(e: PointerEvent): boolean {
+    return this.pointerId >= 0 && e.pointerId !== this.pointerId
   }
 
   private down = (e: PointerEvent) => {
@@ -84,25 +119,29 @@ export class DragDrop {
     const w = this.ev.getWorld()
     const a = w.axies.find((x) => x.uid === uid)
     if (!a) return
+    this.claim(e)
     this.state = { kind: 'fromBoard', uid, axieId: a.axieId, px: e.clientX, py: e.clientY, cell: a.cell }
     this.recompute()
   }
 
   private move = (e: PointerEvent) => {
-    if (this.state.kind === 'none') return
+    if (this.state.kind === 'none' || this.foreign(e)) return
     this.state.px = e.clientX
     this.state.py = e.clientY
     this.recompute()
   }
 
-  private up = () => {
-    if (this.state.kind === 'none') return
+  private up = (e: PointerEvent) => {
+    if (this.state.kind === 'none' || this.foreign(e)) return
     this.ev.onDrop(this.state)
+    this.release()
     this.state = { kind: 'none' }
     this.ev.onUpdate(this.state)
   }
 
-  private cancel = () => {
+  private cancel = (e: PointerEvent) => {
+    if (this.state.kind === 'none' || this.foreign(e)) return
+    this.release()
     this.state = { kind: 'none' }
     this.ev.onUpdate(this.state)
   }
