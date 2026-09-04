@@ -2,10 +2,15 @@ import type { Spine } from 'pixi-spine'
 import { createWorld, startWave } from './sim/world'
 import { move, place, remove } from './sim/placement'
 import { step } from './sim/game'
+import { axieDef } from './data/load'
 import { GameApp } from './render/app'
 import { drawBoard } from './render/board'
 import { WorldView } from './render/view'
 import { loadSkeletons, makeSpine, playAnim, ANIM } from './render/sprites'
+import { loadVfx } from './render/vfx'
+import { tickFloats } from './render/floats'
+import { consumeEvents } from './render/effects'
+import { Sfx } from './audio/sfx'
 import { DT } from './sim/types'
 import { Container } from 'pixi.js'
 import { Hud } from './ui/hud'
@@ -45,13 +50,49 @@ redraw()
 const enemies = [...new Set(world.level.waves.flatMap((w) => w.spawns.map((s) => s.enemy)))]
 await loadSkeletons({ axies: DRAFT, enemies })
 
+// Atlas d'effets nécessaires au niveau : les attaques des classes du draft et
+// tous les statuts du jeu (petit ensemble fixe). Les autres atlas restent sur
+// le disque, chargés seulement si un futur niveau en a besoin.
+const draftClasses = [...new Set(DRAFT.map((id) => axieDef(id).class))]
+const attackVfxIds = draftClasses
+  .map((c) => ANIM.axie_attack[c]?.vfx)
+  .filter((v): v is string => Boolean(v))
+const statusVfxIds = Object.values(ANIM.status).map((s) => s.vfx)
+await loadVfx([...attackVfxIds, ...statusVfxIds])
+
+const sfx = new Sfx()
+
 // --- HUD, bac, barre basse -------------------------------------------------
 
 const hud = new Hud()
 hud.mount(host)
 
+function syncMuteBtn(): void {
+  hud.muteBtn.classList.toggle('is-muted', sfx.muted)
+  hud.muteBtn.textContent = sfx.muted ? '✕' : '♪'
+  hud.muteBtn.setAttribute('aria-pressed', String(sfx.muted))
+}
+syncMuteBtn()
+hud.muteBtn.addEventListener('click', () => {
+  sfx.toggleMute()
+  syncMuteBtn()
+})
+
 const tray = new Tray()
 tray.mount(host)
+
+// Flash rouge plein écran quand une chimère sort : pas de son ni de VFX kit
+// dédiés à une fuite, juste un signal d'écran (et une vibration sur mobile).
+const leakFlash = document.createElement('div')
+leakFlash.className = 'leak-flash'
+host.append(leakFlash)
+let leakFlashTimer: ReturnType<typeof setTimeout> | undefined
+function flashLeak(): void {
+  leakFlash.classList.add('is-on')
+  if (leakFlashTimer) clearTimeout(leakFlashTimer)
+  leakFlashTimer = setTimeout(() => leakFlash.classList.remove('is-on'), 220)
+  navigator.vibrate?.(120)
+}
 
 const bar = document.createElement('div')
 bar.className = 'bar'
@@ -176,9 +217,11 @@ refreshChrome()
 
 let acc = 0
 game.app.ticker.add(() => {
-  acc += (game.app.ticker.deltaMS / 1000) * speedMult
+  const dtReal = game.app.ticker.deltaMS / 1000
+  acc += dtReal * speedMult
   while (acc >= DT) { step(world); acc -= DT }
-  world.events.length = 0
+  consumeEvents(world, { fx: game.fxLayer, layout: game.layout, sfx, onLeak: flashLeak })
+  tickFloats(dtReal)
   view.sync(world, draggedUid())
   refreshChrome()
 })
