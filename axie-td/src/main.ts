@@ -22,8 +22,22 @@ redraw()
 const enemies = [...new Set(world.level.waves.flatMap((w) => w.spawns.map((s) => s.enemy)))]
 await loadSkeletons({ axies: ['olek', 'momo'], enemies })
 
-place(world, 'olek', world.level.path[6])
-place(world, 'momo', [world.level.path[6][0] + 1, world.level.path[6][1]])
+/**
+ * Première case voisine en plaine. Un décalage fixe ne convient pas : au niveau 1,
+ * le voisin de droite de `path[6]` est `path[7]`, donc une case de chemin, où une
+ * classe à distance ne peut pas se poser. Momo disparaîtrait sans erreur visible.
+ */
+function plainNeighbour(w: typeof world, cell: readonly [number, number]): [number, number] {
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const n: [number, number] = [cell[0] + dc, cell[1] + dr]
+    if (w.board.kindAt(n) === 'plain') return n
+  }
+  throw new Error(`Aucun voisin en plaine pour ${cell}`)
+}
+
+const blocker = world.level.path[6]
+place(world, 'olek', blocker)
+place(world, 'momo', plainNeighbour(world, blocker))
 startWave(world)
 
 let acc = 0

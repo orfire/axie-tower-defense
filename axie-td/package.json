@@ -24,6 +24,7 @@
     "vite": "^6.3.5",
     "vitest": "^3.2.0"
   },
+  "//overrides": "pixi-spine@4.0.3 declare ses peer dependencies @pixi/* en ^7.0.0. npm les resolvait vers 7.4.3 (la plus recente satisfaisant le caret), separement de la copie exacte 7.2.4 que pixi.js embarque pour lui-meme : deux copies du coeur PIXI coexistaient (Container, DisplayObject, Assets, le registre extensions...). Ca cassait la compilation TypeScript (types incompatibles entre les deux copies) et plantait au runtime : deux modules @pixi/assets distincts s'enregistraient chacun sur le meme registre extensions singleton, d'ou 'Extension type asset already has a handler'. Ces quatorze paquets sont donc figes sur la version exacte de pixi.js pour ne garder qu'une seule copie dedupliquee dans tout l'arbre. Ne pas retirer sans revalider avec npm ls @pixi/core (une seule version doit apparaitre).",
   "overrides": {
     "@pixi/core": "7.2.4",
     "@pixi/display": "7.2.4",
