@@ -115,7 +115,7 @@ Ces règles s'appliquent à **toutes** les tâches. Elles viennent du GDD (`desi
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "sharp": "^0.34.0",
+    "sharp": "^0.35.0",
     "typescript": "~5.9.2",
     "vite": "^6.3.5",
     "vitest": "^3.2.0"
