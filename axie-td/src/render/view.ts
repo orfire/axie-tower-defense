@@ -61,8 +61,11 @@ export class WorldView {
     const bar = new Graphics()
     const status = new Text('', STATUS_STYLE)
     status.anchor.set(0.5, 1)
-    root.addChild(spine, bar, status)
+    root.addChild(spine, bar)
     this.game.unitLayer.addChild(root)
+    // Hors du conteneur de l'unité pour passer au-dessus des effets : sa
+    // position est donc recopiée à chaque trame, et sa destruction explicite.
+    this.game.pipLayer.addChild(status)
     v = { root, spine, bar, status, facing: 1, cells }
     this.visuals.set(uid, v)
     return v
@@ -133,12 +136,13 @@ export class WorldView {
       // chimère un texte qui n'a pas bougé.
       const glyphs = e.statuses.map((s) => STATUS_GLYPH[s.id]).join('')
       if (v.status.text !== glyphs) v.status.text = glyphs
-      v.status.position.set(0, -c * 0.95)
+      v.status.position.set(v.root.x, v.root.y - c * 0.95)
     }
 
     for (const [uid, v] of this.visuals) {
       if (seen.has(uid)) continue
       v.root.destroy({ children: true })
+      v.status.destroy()
       this.visuals.delete(uid)
     }
 
@@ -146,7 +150,10 @@ export class WorldView {
   }
 
   clear(): void {
-    for (const v of this.visuals.values()) v.root.destroy({ children: true })
+    for (const v of this.visuals.values()) {
+      v.root.destroy({ children: true })
+      v.status.destroy()
+    }
     this.visuals.clear()
   }
 }

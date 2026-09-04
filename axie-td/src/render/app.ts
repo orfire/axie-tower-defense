@@ -33,6 +33,14 @@ export class GameApp {
   readonly unitLayer = new Container()
   /** Effets additifs et nombres flottants. */
   readonly fxLayer = new Container()
+  /**
+   * Pastilles de statut, au-dessus de tout le reste.
+   *
+   * Elles vivaient dans la couche des unités : un effet d'attaque joué sur une
+   * chimère les masquait exactement pendant le combat, le seul moment où elles
+   * servent. Elles ne sont donc plus enfants de l'unité et suivent sa position.
+   */
+  readonly pipLayer = new Container()
   layout: Layout
   private callbacks: ((l: Layout) => void)[] = []
 
@@ -45,7 +53,7 @@ export class GameApp {
       autoDensity: true,
     })
     host.appendChild(this.app.view as HTMLCanvasElement)
-    this.app.stage.addChild(this.boardLayer, this.overlayLayer, this.unitLayer, this.fxLayer)
+    this.app.stage.addChild(this.boardLayer, this.overlayLayer, this.unitLayer, this.fxLayer, this.pipLayer)
     this.layout = computeLayout(host.clientWidth, host.clientHeight)
     this.app.renderer.on('resize', (w: number, h: number) => {
       const next = computeLayout(w, h)
