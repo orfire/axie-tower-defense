@@ -1,7 +1,11 @@
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #1b221e; }
-body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
+/* Fredoka n'est pas embarquee : aucun @font-face, aucun lien Google Fonts.
+   `ui-rounded` donne SF Pro Rounded sur iOS et macOS, donc la direction
+   artistique arrondie du GDD §20 y est tenue sans ajouter un asset ni une
+   ligne de licence. Ailleurs on retombe sur Trebuchet MS. */
+body { font-family: Fredoka, ui-rounded, "Trebuchet MS", system-ui, sans-serif; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
 #app { position: relative; width: 100vw; height: 100dvh; overflow: hidden; }
 
 .hud, .tray, .bar { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; color: #f3f1e8; }

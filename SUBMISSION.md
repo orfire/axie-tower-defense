@@ -29,7 +29,7 @@ set, not a skin.
 - **Relationships.** Every Axie projects an aura on its **four orthogonal
   neighbours** — never diagonals. A lone Axie is weak; a well-arranged team is
   strong. Two Axies of the same class placed side by side do **not** stack their
-  auras (the stronger one applies), which forbids mono-class spam and forces
+  auras — only one instance counts — which forbids mono-class spam and forces
   mixed formations. The board shows aura links as coloured borders carrying a
   class emblem, so the relationship is legible without reading a manual and
   without relying on colour alone.
@@ -99,7 +99,9 @@ total).
 
 ## Loss and retry
 
-Three chimeras through the exit and the level is lost. Retry restarts at wave 1.
+You start each level with 3 life points and a chimera that reaches the exit
+costs 1, 2 or 3 of them depending on its tier: three normal chimeras lose the
+level, but a single boss leak ends it outright. Retry restarts at wave 1.
 **Waves are fully deterministic** — a fixed seed per level, zero randomness
 anywhere in the simulation — so a second attempt is identical and only your
 layout is in question. That is a design requirement, not a side effect.
@@ -128,10 +130,10 @@ Declared honestly; none of these is speculative.
 5. **Six starter Axies carry unvalidated working names** — Kestrel, Fennel,
    Marlin, Thistle, Bramble, Fang. They are placeholders, not official names.
 6. **No music.** Sound effects only, 28 of them, with a mute button.
-7. **Fredoka is not bundled.** The stylesheet asks for it first, so the game
-   falls back to Trebuchet MS or the platform UI font. The intended rounded
-   cartoon look is therefore only present on machines that already have Fredoka
-   installed.
+7. **Fredoka is not bundled.** The stylesheet asks for it first, then
+   `ui-rounded`, which resolves to SF Pro Rounded on iOS and macOS. On those
+   platforms the intended rounded look holds; elsewhere the game falls back to
+   Trebuchet MS and reads flatter than the art direction intends.
 8. **The JS bundle is a single 917 kB chunk** (268 kB gzipped). Under the 1 MB
    line we set for ourselves, but not code-split.
 
