@@ -20,6 +20,12 @@ type Clip = {
 
 const clips = new Map<string, { clip: Clip; textures: Texture[] }>()
 
+/**
+ * Réduction appliquée aux effets d'attaque, après mise à l'échelle sur la
+ * distance. Seul bouton à tourner si les coups masquent encore les chimères.
+ */
+const ATTACK_SCALE = 0.6
+
 /** Charge les atlas d'effets d'un niveau. Les autres restent sur le disque. */
 export async function loadVfx(ids: string[]): Promise<void> {
   const todo = [...new Set(ids)].filter((id) => !clips.has(id))
@@ -71,9 +77,11 @@ export function playVfx(layer: Container, id: string, x: number, y: number, scal
  * l'échelle pour que `captureAttacker` retombe sur l'Axie : le trait part de
  * l'Axie et arrive sur l'ennemi, quelle que soit leur orientation sur le plateau.
  *
- * Le facteur d'échelle est borné. Sans borne, un corps-à-corps à une case
- * réduirait l'effet au sixième de sa taille et une volée d'oiseau le doublerait ;
- * on garde la direction exacte et on accepte un léger dépassement en mêlée.
+ * L'échelle est bornée puis réduite. À la taille exacte du recadrage, un effet
+ * couvre deux à six cases : il masque la chimère qu'on essaie de voir mourir.
+ * `ATTACK_SCALE` la ramène à ce qu'il faut pour lire la direction du coup sans
+ * perdre la cible de vue. Les bornes, elles, empêchent un corps-à-corps de
+ * tomber au sixième de sa taille et une volée d'oiseau de tout envahir.
  */
 export function playVfxBetween(layer: Container, id: string, from: Point, to: Point, base = 1): void {
   const entry = clips.get(id)
@@ -90,7 +98,8 @@ export function playVfxBetween(layer: Container, id: string, from: Point, to: Po
 
   const sprite = makeSprite(clip, textures, cd)
   sprite.position.set(to.x, to.y)
-  sprite.scale.set(Math.min(Math.max(onScreen / inImage, base * 0.75), base * 2.5))
+  const span = Math.min(Math.max(onScreen / inImage, base * 0.6), base * 1.6)
+  sprite.scale.set(span * ATTACK_SCALE)
   sprite.rotation = Math.atan2(wy, wx) - Math.atan2(ay, ax)
   layer.addChild(sprite)
   sprite.play()
