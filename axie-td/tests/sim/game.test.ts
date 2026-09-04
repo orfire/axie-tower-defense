@@ -112,19 +112,47 @@ describe('déterminisme', () => {
     expect(w.enemies[0].d).toBeCloseTo(1, 6)
   })
 
-  it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
-    // Sensible à l'ordre entre moveEnemies, qui pose blockedBy, et enemyActions,
-    // qui le consomme dans le même tick. Un slime bloqué inflige 4 dégâts par
-    // seconde à Olek, sans modificateur : Plante contre Plante est neutre.
+  it('frappe le bloqueur dès le tick où le blocage s’établit', () => {
+    // C'EST ce test qui est sensible à l'ordre entre moveEnemies, qui pose
+    // blockedBy, et enemyActions, qui le consomme. Dans le bon ordre, le tout
+    // premier tick de blocage inflige déjà des dégâts. Si enemyActions passait
+    // avant moveEnemies, il lirait un blockedBy encore vide et les dégâts
+    // n'arriveraient qu'au tick suivant.
+    // Mesurer une seconde en régime établi ne le détecte pas : une fois le
+    // blocage installé, le drapeau vaut la même chose dans les deux ordres et le
+    // décalage d'un tick disparaît dans la somme.
     const w = createWorld(1)
     const olek = place(w, 'olek', w.level.path[6])!
     startWave(w)
-    // On laisse le premier slime venir se coller au bloqueur, mais pas plus :
-    // attendre un temps fixe (8 s) laisse Olek entamer sa cible avant même le
-    // début de la mesure, et elle meurt en cours de fenêtre (40 PV, 0 % d'armure,
-    // ~9,6 dps d'Olek — morte vers 8,7 s), ce qui troue la seconde mesurée.
+
+    let hpAvant = olek.hp
+    let ticks = 0
+    while (ticks < Math.round(20 / DT) && !w.enemies.some((e) => e.blockedBy === olek.uid)) {
+      hpAvant = olek.hp
+      step(w)
+      ticks++
+    }
+    expect(w.enemies.some((e) => e.blockedBy === olek.uid), 'aucun blocage en 20 s').toBe(true)
+    // Le slime inflige 4 dégâts par seconde, soit 4 × DT sur ce seul tick.
+    expect(hpAvant - olek.hp).toBeCloseTo(4 * DT, 6)
+  })
+
+  it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
+    // Contrôle de valeur, pas d'ordre : un slime bloqué retire 4 PV par seconde
+    // à Olek, sans modificateur, Plante contre Plante étant neutre.
+    const w = createWorld(1)
+    const olek = place(w, 'olek', w.level.path[6])!
+    startWave(w)
+    // On avance jusqu'au blocage, et pas au-delà. Attendre un temps fixe laisserait
+    // Olek entamer sa cible avant la mesure : un slime à 40 PV sans armure tombe en
+    // 4 s environ sous ses 9,6 dégâts par seconde, et mourrait au milieu de la
+    // seconde mesurée, ce qui la trouerait.
     let waited = 0
-    while (waited < Math.round(20 / DT) && w.phase === 'wave' && !w.enemies.some((e) => e.blockedBy === olek.uid)) {
+    while (
+      waited < Math.round(20 / DT)
+      && w.phase === 'wave'
+      && !w.enemies.some((e) => e.blockedBy === olek.uid)
+    ) {
       step(w)
       waited++
     }
