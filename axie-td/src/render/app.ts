@@ -6,6 +6,8 @@ export const PALETTE = {
   plain: 0xb6c4a5,
   plainLine: 0x22302a,
   path: 0x9a7b5b,
+  pathEdge: 0x5c4936,
+  exit: 0xffd23f,
   hill: 0xc9c2b0,
   hillShadow: 0x8f8877,
   valid: 0x78cd6e,
@@ -46,8 +48,15 @@ export class GameApp {
     this.app.stage.addChild(this.boardLayer, this.overlayLayer, this.unitLayer, this.fxLayer)
     this.layout = computeLayout(host.clientWidth, host.clientHeight)
     this.app.renderer.on('resize', (w: number, h: number) => {
-      this.layout = computeLayout(w, h)
-      for (const cb of this.callbacks) cb(this.layout)
+      const next = computeLayout(w, h)
+      // Un redimensionnement au glissé émet des dizaines d'événements. Tant que
+      // la géométrie du plateau ne bouge pas au pixel près, rien à redessiner.
+      const same = next.cell === this.layout.cell
+        && next.boardX === this.layout.boardX
+        && next.boardY === this.layout.boardY
+      this.layout = next
+      if (same) return
+      for (const cb of this.callbacks) cb(next)
     })
   }
 

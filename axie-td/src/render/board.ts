@@ -8,7 +8,9 @@ import { cellToPx, COLS, ROWS, type Layout } from './layout'
  * c'est le chemin qui doit ressortir, pas la grille (GDD §20.3).
  */
 export function drawBoard(target: Container, board: Board, layout: Layout): void {
-  target.removeChildren()
+  // `removeChildren` détache sans libérer la géométrie GPU : sans le `destroy`,
+  // un redimensionnement au glissé accumule des objets pendant toute la session.
+  for (const old of target.removeChildren()) old.destroy()
   const g = new Graphics()
   const c = layout.cell
   const r = Math.max(2, c * 0.14)
@@ -36,13 +38,21 @@ export function drawBoard(target: Container, board: Board, layout: Layout): void
     }
   }
 
-  // Bord arrondi du chemin : on repasse les extrémités pour adoucir l'entrée et la sortie.
+  // Entrée et sortie : deux repères que le joueur doit lire sans légende.
+  // Repasser un rectangle arrondi de la même couleur par-dessus le chemin ne
+  // donnerait rien, la forme arrondie étant incluse dans le carré déjà peint.
   const entry = cellToPx(layout, board.path[0][0], board.path[0][1])
   const exit = cellToPx(layout, board.path.at(-1)![0], board.path.at(-1)![1])
-  g.beginFill(PALETTE.path, 1)
-    .drawRoundedRect(entry.x, entry.y, c, c, r)
-    .drawRoundedRect(exit.x, exit.y, c, c, r)
+
+  // L'entrée est une gueule de terrier : un demi-disque sombre en creux.
+  g.beginFill(PALETTE.pathEdge, 0.9)
+    .drawCircle(entry.x + c / 2, entry.y + c / 2, c * 0.3)
     .endFill()
+
+  // La sortie est un anneau clair : c'est là que les chimères s'échappent.
+  g.lineStyle(Math.max(2, c * 0.08), PALETTE.exit, 0.95)
+    .drawCircle(exit.x + c / 2, exit.y + c / 2, c * 0.3)
+    .lineStyle(0)
 
   target.addChild(g)
 }
