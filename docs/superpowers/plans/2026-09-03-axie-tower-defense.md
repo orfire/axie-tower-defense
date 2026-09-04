@@ -4992,7 +4992,7 @@ game.app.view.addEventListener?.('pointerdown', (e) => {
 })
 ```
 
-Le bac porte déjà l'identifiant sur chaque emplacement, posé par .
+Le bac porte déjà l'identifiant sur chaque emplacement, posé par sa méthode `build`.
 
 - [ ] **Étape 7 : Vérifier au navigateur**
 
