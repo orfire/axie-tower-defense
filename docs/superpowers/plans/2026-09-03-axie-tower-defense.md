@@ -3653,13 +3653,30 @@ export function makeSpine(key: SkeletonKey): Spine {
   return new Spine((data as { spineData: never }).spineData)
 }
 
-/** Joue une animation si le squelette la possède, sinon la première disponible en repli. */
-export function playAnim(spine: Spine, name: string, loop: boolean, fallbacks: string[] = []): void {
+/**
+ * Joue une animation si le squelette la possède, sinon la première disponible en repli.
+ *
+ * Le garde-fou vaut pour toutes les animations, en boucle ou non. Il ne portait
+ * d'abord que sur les boucles, ce qui figeait les animations à jouer une fois :
+ * `sync` rappelle cette fonction à chaque frame, `setAnimation` crée à chaque
+ * appel une nouvelle piste, et l'animation redémarrait donc 60 fois par seconde
+ * sans jamais dépasser sa première image. Un Axie KO restait figé.
+ *
+ * `restart` sert aux appelants qui veulent vraiment rejouer depuis le début,
+ * comme une animation d'attaque déclenchée à chaque coup.
+ */
+export function playAnim(
+  spine: Spine,
+  name: string,
+  loop: boolean,
+  fallbacks: string[] = [],
+  restart = false,
+): void {
   const has = (n: string) => spine.spineData.animations.some((a) => a.name === n)
   const pick = [name, ...fallbacks].find(has)
   if (!pick) return
   const current = spine.state.getCurrent(0)
-  if (current && current.animation?.name === pick && loop) return
+  if (!restart && current && current.animation?.name === pick) return
   spine.state.setAnimation(0, pick, loop)
 }
 
@@ -3839,9 +3856,15 @@ function plainNeighbour(w: typeof world, cell: readonly [number, number]): [numb
   throw new Error(`Aucun voisin en plaine pour ${cell}`)
 }
 
+// `place` renvoie null quand la case est refusée. Sans ce contrôle, un Axie
+// disparaît sans message et on cherche la cause ailleurs, comme c'est arrivé ici.
 const blocker = world.level.path[6]
-place(world, 'olek', blocker)
-place(world, 'momo', plainNeighbour(world, blocker))
+for (const [id, cell] of [
+  ['olek', blocker],
+  ['momo', plainNeighbour(world, blocker)],
+] as const) {
+  if (!place(world, id, cell)) throw new Error(`Placement refusé : ${id} en ${cell}`)
+}
 startWave(world)
 
 let acc = 0

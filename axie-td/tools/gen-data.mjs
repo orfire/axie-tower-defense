@@ -382,7 +382,9 @@ const vfxMap = {
   },
   axie_place: { spine: 'activity/appear', sfx_by_class: { beast: 'beast_cast_attack', aquatic: 'aquatic_cast_attack', plant: 'plant_cast_attack', bird: 'bird_cast_attack', bug: 'bug_cast_attack', reptile: 'reptile_cast_attack' } },
   axie_hit: { spine: 'defense/hit-by-normal' },
-  axie_ko: { spine: 'defense/hit-die', fallback: 'defense/hit-by-normal-dramatic' },
+  // Les Axies n'ont pas 'defense/hit-die' : c'est une animation de chimère.
+  // Vérifié sur les squelettes du kit, ils s'arrêtent à hit-by-normal-dramatic.
+  axie_ko: { spine: 'defense/hit-by-normal-dramatic', fallback: 'defense/hit-by-normal' },
   axie_idle: { spine: 'action/idle/normal', random: ['action/idle/random-01', 'action/idle/random-02', 'action/idle/random-03'] },
   axie_victory: { spine: 'activity/victory-pose-back-flip' },
   axie_unlock: { spine: 'activity/appear' },

@@ -58,8 +58,8 @@
     "spine": "defense/hit-by-normal"
   },
   "axie_ko": {
-    "spine": "defense/hit-die",
-    "fallback": "defense/hit-by-normal-dramatic"
+    "spine": "defense/hit-by-normal-dramatic",
+    "fallback": "defense/hit-by-normal"
   },
   "axie_idle": {
     "spine": "action/idle/normal",
