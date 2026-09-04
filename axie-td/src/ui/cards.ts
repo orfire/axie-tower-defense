@@ -11,23 +11,38 @@ const PART_FR: Record<string, string> = {
   horn: 'Corne', back: 'Dos', tail: 'Queue',
 }
 
-const AURA_FR: Record<string, { nom: string; texte: string }> = {
-  fury: { nom: 'Fureur', texte: 'Les voisins font +30 % de dégâts aux cibles sous la moitié de leurs PV.' },
-  tide: { nom: 'Marée', texte: 'Les cibles touchées par un voisin deviennent Trempées.' },
-  roots: { nom: 'Racines', texte: 'Les ennemis des cases voisines perdent 40 % de vitesse.' },
-  wind: { nom: 'Vent', texte: 'Les voisins gagnent une case de portée.' },
-  swarm: { nom: 'Essaim', texte: 'Les poisons posés par les voisins agissent deux fois plus vite.' },
-  scales: { nom: 'Écailles', texte: 'Les ennemis des cases voisines perdent 15 points d’armure.' },
+/**
+ * Textes d'aura, dont les chiffres viennent des données et non d'une recopie.
+ *
+ * Cette fiche est le seul endroit où le jury voit le lien entre les traits d'un
+ * Axie et son comportement. La tâche 20 passera son temps à modifier
+ * `balance.json` : une valeur recopiée ici s'en désolidariserait au premier
+ * rééquilibrage, et la fiche mentirait sur le cœur du design sans qu'un test
+ * ne s'en aperçoive.
+ */
+const AURA_FR: Record<string, { nom: string; texte: (v: number) => string }> = {
+  fury: { nom: 'Fureur', texte: (v) => `Les voisins font +${Math.round((v - 1) * 100)} % de dégâts aux cibles sous la moitié de leurs PV.` },
+  tide: { nom: 'Marée', texte: () => 'Les cibles touchées par un voisin deviennent Trempées.' },
+  roots: { nom: 'Racines', texte: (v) => `Les ennemis des cases voisines perdent ${Math.round((1 - v) * 100)} % de vitesse.` },
+  wind: { nom: 'Vent', texte: (v) => `Les voisins gagnent ${v} case${v > 1 ? 's' : ''} de portée.` },
+  swarm: { nom: 'Essaim', texte: (v) => `Les poisons posés par les voisins agissent ${v} fois plus vite.` },
+  scales: { nom: 'Écailles', texte: (v) => `Les ennemis des cases voisines perdent ${Math.abs(v)} points d’armure.` },
+}
+
+/** Effet chiffré d'une part, calculé depuis `BALANCE.parts_bonus`. */
+function partEffect(cls: ClassId): string {
+  const b = BALANCE.parts_bonus[cls]
+  const libelle: Record<string, string> = { damage: 'dégâts', rate: 'cadence', hp: 'PV' }
+  const lignes = (Object.entries(b) as [string, number][])
+    .filter(([, v]) => v > 0)
+    .sort((x, y) => y[1] - x[1]) // la statistique dominante en premier
+    .map(([k, v]) => `+${Math.round(v * 100)} % ${libelle[k] ?? k}`)
+  return lignes.join(', ') || '—'
 }
 
 const LINE_FR: Record<string, string> = {
   melee: 'Mêlée, peut bloquer sur le chemin',
   ranged: 'Distance, plaine ou colline',
-}
-
-const PART_EFFECT: Record<ClassId, string> = {
-  beast: '+6 % dégâts', bug: '+3 % dégâts, +3 % cadence', bird: '+6 % cadence',
-  aquatic: '+3 % cadence, +3 % PV', plant: '+6 % PV', reptile: '+4 % PV, +2 % dégâts',
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
@@ -49,7 +64,7 @@ export function axieCardHtml(axieId: string): string {
       <i class="ic ic-${partCls}"></i>
       <span class="part-slot">${PART_FR[slot]}</span>
       <span class="part-cls">${CLASS_FR[partCls]}</span>
-      <span class="part-eff">${PART_EFFECT[partCls as ClassId] ?? '—'}</span>
+      <span class="part-eff">${partEffect(partCls as ClassId)}</span>
     </li>`).join('')
 
   return `
@@ -62,7 +77,7 @@ export function axieCardHtml(axieId: string): string {
       <li><span>Portée</span><b>${c.range}</b></li>
     </ul>
     <h4>Aura : ${aura.nom}</h4>
-    <p>${aura.texte}</p>
+    <p>${aura.texte(BALANCE.auras[c.aura].value ?? 0)}</p>
     <h4>Ses 6 parts</h4>
     <ul class="parts">${parts}</ul>
     <p class="card-note">Total : ${pct(def.bonuses.hp)} PV, ${pct(def.bonuses.damage)} dégâts, ${pct(def.bonuses.rate)} cadence.</p>`
@@ -103,6 +118,11 @@ export class CardOverlay {
     this.el.hidden = true
     this.el.addEventListener('pointerdown', (e) => {
       if (e.target === this.el) this.hide()
+    })
+    // Le panneau se déclare modal : la touche d'échappement doit le fermer,
+    // sinon un joueur au clavier s'y retrouve enfermé.
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.el.hidden) this.hide()
     })
   }
 

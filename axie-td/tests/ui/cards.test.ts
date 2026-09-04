@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { BALANCE } from '../../src/data/load'
 import { axieCardHtml, enemyCardHtml } from '../../src/ui/cards'
 
 describe('fiche d’Axie', () => {
@@ -23,6 +24,17 @@ describe('fiche d’Axie', () => {
 
   it('décrit l’aura de la classe', () => {
     expect(html).toContain('Fureur')
+  })
+
+  it('tire ses chiffres des données et non d’une recopie', () => {
+    // La tâche 20 modifiera balance.json en boucle. Si la fiche recopiait ses
+    // valeurs, elle mentirait sur le lien traits → jeu dès le premier ajustement,
+    // et c'est précisément ce lien que le concours note à 35 %.
+    const bonus = BALANCE.parts_bonus.bird.rate!
+    expect(html).toContain(`+${Math.round(bonus * 100)} % cadence`)
+
+    const fury = BALANCE.auras.fury.value!
+    expect(axieCardHtml('buba')).toContain(`+${Math.round((fury - 1) * 100)} % de dégâts`)
   })
 })
 

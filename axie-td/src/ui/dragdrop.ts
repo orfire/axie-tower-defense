@@ -108,6 +108,21 @@ export class DragDrop {
     return this.pointerId >= 0 && e.pointerId !== this.pointerId
   }
 
+  /**
+   * Abandonne le geste en cours sans rien déposer.
+   *
+   * Un glissement démarre dès l'appui, avant même que le compte à rebours de
+   * l'appui long ne s'achève. Sans cet abandon, ouvrir une fiche laisserait une
+   * session de glissement ouverte derrière elle, et le relâchement déposerait
+   * l'Axie à la position figée du départ, fiche encore affichée.
+   */
+  abort(): void {
+    if (this.state.kind === 'none') return
+    this.release()
+    this.state = { kind: 'none' }
+    this.ev.onUpdate(this.state)
+  }
+
   private down = (e: PointerEvent) => {
     if (this.state.kind !== 'none') return
     const layout = this.ev.getLayout()
