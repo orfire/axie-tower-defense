@@ -3282,7 +3282,7 @@ cd axie-td && git add -A && git commit -m "feat: placement, budget, boucle de va
 - Produit :
   - `type Layout = { cell: number; boardX: number; boardY: number; boardW: number; boardH: number; hudH: number; trayH: number; barH: number }`
   - `function computeLayout(w: number, h: number): Layout`
-  - `class GameApp` avec `app: Application`, `world: Container`, `layout: Layout`, `onResize(cb)`
+  - `class GameApp` avec `app: Application`, quatre couches `boardLayer`, `overlayLayer`, `unitLayer`, `fxLayer`, plus `layout: Layout`, `onResize(cb)` et `sortUnits()`
   - `function drawBoard(g: Container, board: Board, layout: Layout): void`
 
 **Mise en page (GDD §11.2) :** barre haute 48 px, plateau, bac 96 px, barre basse 64 px. La taille de case est `min(largeur ÷ 7, (hauteur − 208) ÷ 10)`, soit 55 px en référence 390 × 780 et 43 px au minimum 360 × 640. Le plateau est centré sur les deux axes.
@@ -3417,6 +3417,8 @@ export const PALETTE = {
   plain: 0xb6c4a5,
   plainLine: 0x22302a,
   path: 0x9a7b5b,
+  pathEdge: 0x5c4936,
+  exit: 0xffd23f,
   hill: 0xc9c2b0,
   hillShadow: 0x8f8877,
   valid: 0x78cd6e,
@@ -3457,8 +3459,15 @@ export class GameApp {
     this.app.stage.addChild(this.boardLayer, this.overlayLayer, this.unitLayer, this.fxLayer)
     this.layout = computeLayout(host.clientWidth, host.clientHeight)
     this.app.renderer.on('resize', (w: number, h: number) => {
-      this.layout = computeLayout(w, h)
-      for (const cb of this.callbacks) cb(this.layout)
+      const next = computeLayout(w, h)
+      // Un redimensionnement au glissé émet des dizaines d'événements. Tant que
+      // la géométrie du plateau ne bouge pas au pixel près, rien à redessiner.
+      const same = next.cell === this.layout.cell
+        && next.boardX === this.layout.boardX
+        && next.boardY === this.layout.boardY
+      this.layout = next
+      if (same) return
+      for (const cb of this.callbacks) cb(next)
     })
   }
 
@@ -3486,7 +3495,9 @@ import { cellToPx, COLS, ROWS, type Layout } from './layout'
  * c'est le chemin qui doit ressortir, pas la grille (GDD §20.3).
  */
 export function drawBoard(target: Container, board: Board, layout: Layout): void {
-  target.removeChildren()
+  // `removeChildren` détache sans libérer la géométrie GPU : sans le `destroy`,
+  // un redimensionnement au glissé accumule des objets pendant toute la session.
+  for (const old of target.removeChildren()) old.destroy()
   const g = new Graphics()
   const c = layout.cell
   const r = Math.max(2, c * 0.14)
@@ -3514,13 +3525,21 @@ export function drawBoard(target: Container, board: Board, layout: Layout): void
     }
   }
 
-  // Bord arrondi du chemin : on repasse les extrémités pour adoucir l'entrée et la sortie.
+  // Entrée et sortie : deux repères que le joueur doit lire sans légende.
+  // Repasser un rectangle arrondi de la même couleur par-dessus le chemin ne
+  // donnerait rien, la forme arrondie étant incluse dans le carré déjà peint.
   const entry = cellToPx(layout, board.path[0][0], board.path[0][1])
   const exit = cellToPx(layout, board.path.at(-1)![0], board.path.at(-1)![1])
-  g.beginFill(PALETTE.path, 1)
-    .drawRoundedRect(entry.x, entry.y, c, c, r)
-    .drawRoundedRect(exit.x, exit.y, c, c, r)
+
+  // L'entrée est une gueule de terrier : un demi-disque sombre en creux.
+  g.beginFill(PALETTE.pathEdge, 0.9)
+    .drawCircle(entry.x + c / 2, entry.y + c / 2, c * 0.3)
     .endFill()
+
+  // La sortie est un anneau clair : c'est là que les chimères s'échappent.
+  g.lineStyle(Math.max(2, c * 0.08), PALETTE.exit, 0.95)
+    .drawCircle(exit.x + c / 2, exit.y + c / 2, c * 0.3)
+    .lineStyle(0)
 
   target.addChild(g)
 }
