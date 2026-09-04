@@ -101,7 +101,7 @@
       "line": "ranged",
       "cost": 1,
       "hp": 60,
-      "damage": 8,
+      "damage": 7,
       "rate": 1.2,
       "range": 2.5,
       "attack_vfx": "aquatic_projectile",
@@ -125,7 +125,7 @@
       "line": "ranged",
       "cost": 1,
       "hp": 50,
-      "damage": 10,
+      "damage": 4,
       "rate": 2,
       "range": 3.5,
       "attack_vfx": "bird_projectile",
@@ -349,7 +349,7 @@
       "hp": 40,
       "speed": 1,
       "armor": 0,
-      "melee_dps": 4,
+      "melee_dps": 7,
       "tier": "normal"
     },
     "slime-forest-a": {
@@ -357,7 +357,7 @@
       "hp": 60,
       "speed": 1,
       "armor": 0,
-      "melee_dps": 5,
+      "melee_dps": 8,
       "tier": "normal"
     },
     "slime-forest-b": {
@@ -365,7 +365,7 @@
       "hp": 30,
       "speed": 1.4,
       "armor": 0,
-      "melee_dps": 3,
+      "melee_dps": 6,
       "tier": "normal"
     },
     "slime-attack": {
@@ -387,7 +387,7 @@
       "hp": 90,
       "speed": 0.8,
       "armor": 0.3,
-      "melee_dps": 4,
+      "melee_dps": 7,
       "tier": "normal"
     },
     "slime-support": {

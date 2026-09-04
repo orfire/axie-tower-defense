@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { createWorld, startWave } from '../../src/sim/world'
 import { runWave, starsFor, step } from '../../src/sim/game'
 import { axieActions } from '../../src/sim/axieActions'
+import { BALANCE } from '../../src/data/load'
 import { makeEnemy } from '../../src/sim/spawn'
 import { place } from '../../src/sim/placement'
 import { DT } from '../../src/sim/types'
@@ -133,20 +134,21 @@ describe('déterminisme', () => {
       ticks++
     }
     expect(w.enemies.some((e) => e.blockedBy === olek.uid), 'aucun blocage en 20 s').toBe(true)
-    // Le slime inflige 4 dégâts par seconde, soit 4 × DT sur ce seul tick.
-    expect(hpAvant - olek.hp).toBeCloseTo(4 * DT, 6)
+    // Un slime inflige ses dégâts de mêlée sur ce seul tick. La valeur vient de
+    // la donnée : ce test porte sur le tempo du blocage, pas sur l'équilibrage.
+    expect(hpAvant - olek.hp).toBeCloseTo(BALANCE.enemies.slime.melee_dps * DT, 6)
   })
 
   it('inflige exactement les dégâts de mêlée d’une seconde au bloqueur', () => {
-    // Contrôle de valeur, pas d'ordre : un slime bloqué retire 4 PV par seconde
-    // à Olek, sans modificateur, Plante contre Plante étant neutre.
+    // Contrôle de valeur, pas d'ordre : un slime bloqué retire à Olek ses dégâts
+    // de mêlée par seconde, sans modificateur, Plante contre Plante étant neutre.
     const w = createWorld(1)
     const olek = place(w, 'olek', w.level.path[6])!
     startWave(w)
     // On avance jusqu'au blocage, et pas au-delà. Attendre un temps fixe laisserait
     // Olek entamer sa cible avant la mesure : un slime à 40 PV sans armure tombe en
-    // 4 s environ sous ses 9,6 dégâts par seconde, et mourrait au milieu de la
-    // seconde mesurée, ce qui la trouerait.
+    // quelques secondes sous ses dégâts, et mourrait au milieu de la seconde
+    // mesurée, ce qui la trouerait.
     let waited = 0
     while (
       waited < Math.round(20 / DT)
@@ -161,7 +163,7 @@ describe('déterminisme', () => {
 
     const before = olek.hp
     for (let i = 0; i < Math.round(1 / DT); i++) step(w)
-    expect(before - olek.hp).toBeCloseTo(4, 4)
+    expect(before - olek.hp).toBeCloseTo(BALANCE.enemies.slime.melee_dps, 4)
   })
 
   it('n’utilise ni aléa ni horloge dans src/sim', () => {

@@ -5,7 +5,7 @@ import type { World } from '../sim/world'
 import { unitToPx, type Layout } from './layout'
 import { spawnFloat } from './floats'
 import { ANIM } from './sprites'
-import { playVfx } from './vfx'
+import { playVfx, playVfxBetween } from './vfx'
 
 export type EffectCtx = {
   fx: Container
@@ -41,9 +41,14 @@ export function consumeEvents(world: World, ctx: EffectCtx): void {
     switch (ev.k) {
       case 'attack': {
         const anim = ANIM.axie_attack[ev.cls]
-        const p = posOf(world, ev.to, ctx.layout, ev.at)
-        if (p && anim) {
-          playVfx(ctx.fx, anim.vfx, p.x, p.y, ctx.layout.cell / 180)
+        const to = posOf(world, ev.to, ctx.layout, ev.at)
+        if (to && anim) {
+          // L'attaquant vient d'agir, il est donc toujours dans la liste : sa
+          // position se retrouve par identifiant, sans la porter dans l'événement.
+          const from = posOf(world, ev.from, ctx.layout)
+          const base = ctx.layout.cell / 180
+          if (from) playVfxBetween(ctx.fx, anim.vfx, from, to, base)
+          else playVfx(ctx.fx, anim.vfx, to.x, to.y, base)
           ctx.sfx.play(anim.sfx)
         }
         break
