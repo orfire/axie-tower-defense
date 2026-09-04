@@ -3359,7 +3359,10 @@ export type Layout = {
  * déborder ni en largeur ni en hauteur. Centré sur les deux axes.
  */
 export function computeLayout(width: number, height: number): Layout {
-  const cell = Math.min(width / COLS, (height - CHROME_H) / ROWS)
+  // Arrondi au pixel entier : à 390 × 780 la valeur brute vaut 55,71, ce qui
+  // donnerait un plateau de 389,97 × 557,1 et des joints visibles entre les
+  // tuiles. Le plancher donne 55, soit les 385 × 550 de la maquette du GDD.
+  const cell = Math.floor(Math.min(width / COLS, (height - CHROME_H) / ROWS))
   const boardW = cell * COLS
   const boardH = cell * ROWS
   return {
