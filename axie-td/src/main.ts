@@ -14,8 +14,10 @@ import { consumeEvents } from './render/effects'
 import { pxToCell, unitToPx } from './render/layout'
 import { Sfx } from './audio/sfx'
 import { CardOverlay } from './ui/cards'
+import { controlsHtml } from './ui/controls'
 import { DragDrop, type DragState } from './ui/dragdrop'
 import { Hud } from './ui/hud'
+import { injectIconStyles } from './ui/icons'
 import { Onboarding, hintCell } from './ui/onboarding'
 import { drawAuraLinks, drawAuraZones, drawHintCell, drawOverlay } from './ui/overlay'
 import { Router, type ScreenId } from './ui/router'
@@ -30,6 +32,11 @@ if (!host) throw new Error('#app introuvable')
 const session = new Session()
 const router = new Router()
 session.speed2x = session.save.speed2x
+
+// Emblèmes de classe des six classes, en données URI : la patte, le poisson, la
+// feuille, la plume, le papillon, la patte de reptile. La silhouette porte la
+// classe, la couleur ne fait que la redire (règle d'accessibilité du concours).
+injectIconStyles()
 
 /**
  * Raccourci de développement : `?niveau=N` entre directement dans le niveau N,
@@ -120,6 +127,10 @@ function syncMuteBtn(): void {
   hud.muteBtn.classList.toggle('is-muted', sfx.muted)
   hud.muteBtn.textContent = sfx.muted ? '✕' : '♪'
   hud.muteBtn.setAttribute('aria-pressed', String(sfx.muted))
+  // L'étiquette dit l'action à venir, pas l'état : « Couper le son » figé sur un
+  // bouton déjà coupé annonce l'inverse de ce qu'il fait. `aria-pressed` porte
+  // l'état, l'étiquette porte l'effet du prochain appui.
+  hud.muteBtn.setAttribute('aria-label', sfx.muted ? 'Rétablir le son' : 'Couper le son')
 }
 syncMuteBtn()
 hud.muteBtn.addEventListener('click', () => {
@@ -182,6 +193,12 @@ function syncSpeedBtn(): void {
   speedBtn.classList.toggle('is-on', session.speed2x)
   speedBtn.textContent = session.speed2x ? '×2' : '×1'
   speedBtn.setAttribute('aria-pressed', String(session.speed2x))
+  // « ×2 » seul ne se lit pas à voix haute : un lecteur d'écran annonce
+  // « fois deux, bouton », sans dire de quoi. L'étiquette nomme l'action.
+  speedBtn.setAttribute(
+    'aria-label',
+    session.speed2x ? 'Revenir à la vitesse normale' : 'Doubler la vitesse',
+  )
 }
 syncSpeedBtn()
 speedBtn.addEventListener('click', () => {
@@ -203,7 +220,13 @@ function refreshChrome(): void {
   if (!w) return
   hud.update(w)
   tray.update(w, session.draft)
-  launchBtn.disabled = w.phase !== 'placement'
+  // Le libellé change avec la phase : un bouton grisé qui dit encore « Lancer la
+  // vague » ne dit pas pourquoi il ne répond plus, et le gris seul ne porte pas
+  // l'information (règle d'accessibilité du concours).
+  const placing = w.phase === 'placement'
+  launchBtn.disabled = !placing
+  const label = placing ? 'Lancer la vague' : 'Vague en cours'
+  if (launchBtn.textContent !== label) launchBtn.textContent = label
   drawOverlay(overlayGfx, w, game.layout, dragDrop.state)
   drawAuraZones(auraZonesGfx, w, game.layout)
   drawAuraLinks(auraLinksGfx, w, game.layout)
@@ -439,7 +462,7 @@ router.onEnter('play', (p) => {
   void startPlay(id, draft)
 })
 
-for (const id of ['title', 'map', 'brief', 'draft', 'result', 'defeat', 'collection'] as const) {
+for (const id of ['title', 'map', 'brief', 'draft', 'result', 'defeat', 'collection', 'controls'] as const) {
   router.onEnter(id, () => render())
 }
 
@@ -452,6 +475,7 @@ function screenHtml(): string {
     case 'result': return resultHtml(nav.levelId, nav.stars, session.save, nav.unlocked)
     case 'defeat': return defeatHtml(nav.levelId, nav.wave)
     case 'collection': return collectionHtml(session.save)
+    case 'controls': return controlsHtml()
     default: return '<div class="screen"><p class="hint">Chargement…</p></div>'
   }
 }

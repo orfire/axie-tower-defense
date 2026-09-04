@@ -40,6 +40,10 @@ body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user
 .parts .part { display: grid; grid-template-columns: 22px 62px 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; padding: 3px 0; }
 .part .ic { width: 20px; height: 20px; border-radius: 50%; background-size: cover; }
 .part-eff { color: #5f6d64; }
+/* La liste porte sa propre puce en `::before` : sans ce retrait, `.traits`
+   employée hors d'une fiche (page des contrôles) affiche deux puces par ligne,
+   celle du navigateur et la nôtre. `.card ul` ne couvrait que les fiches. */
+.traits { list-style: none; margin: 0; padding: 0; }
 .traits li { font-size: 13px; padding: 2px 0 2px 14px; position: relative; }
 .traits li::before { content: "•"; position: absolute; left: 2px; }
 .card-close { width: 100%; margin-top: 14px; height: 40px; border: 0; border-radius: 12px; background: #2b3a33; color: #fff; font: inherit; font-weight: 600; }
@@ -148,8 +152,21 @@ body { font-family: Fredoka, "Trebuchet MS", system-ui, sans-serif; -webkit-user
 .unlock .hint { color: #5f6d64; text-transform: uppercase; letter-spacing: .8px; font-size: 11px; }
 .unlock h4 { color: #5f6d64; }
 
-/* Pastilles de classe. Décoratives : le nom de la classe est toujours écrit à
-   côté, aucune information ne repose sur la seule couleur. */
+/* Page « Contrôles et appareils ». Elle défile : c'est le seul écran plus haut
+   qu'une page, et `.screen` bloque à `min-height: 100dvh` sans l'empêcher. */
+.screen-controls { gap: 4px; }
+.screen-controls .traits li { padding: 3px 0 3px 14px; }
+/* Légende des pastilles de statut : le glyphe, puis son nom et son effet en
+   toutes lettres. Sans elle un glyphe flottant au-dessus d'une chimère ne veut
+   rien dire. La puce du `.traits` est remplacée par le glyphe lui-même. */
+.glyphs li { padding-left: 0; }
+.glyphs li::before { content: none; }
+.glyph { display: inline-block; min-width: 22px; font-size: 15px; }
+
+/* Pastilles de classe. `injectIconStyles` pose l'emblème du kit par-dessus ces
+   couleurs, qui restent comme repli si l'image ne décode pas. L'information ne
+   repose jamais sur la seule couleur : l'emblème a une silhouette propre, et le
+   nom de la classe est de toute façon écrit à côté. */
 .ic { display: inline-block; width: 20px; height: 20px; border-radius: 50%;
   background: #55665d; flex: none; }
 .ic-beast { background: #f5a623; }

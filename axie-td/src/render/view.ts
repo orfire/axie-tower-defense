@@ -1,8 +1,9 @@
-import { Container, Graphics } from 'pixi.js'
+import { Container, Graphics, Text, TextStyle } from 'pixi.js'
 import type { Spine } from 'pixi-spine'
 import type { Tier } from '../data/types'
 import type { World } from '../sim/world'
 import { center } from '../sim/grid'
+import { STATUS_GLYPH } from '../ui/icons'
 import type { GameApp } from './app'
 import { PALETTE } from './app'
 import { unitToPx } from './layout'
@@ -12,10 +13,27 @@ type Visual = {
   root: Container
   spine: Spine
   bar: Graphics
+  /** Pastilles de statut, au-dessus de la barre de vie. Vide pour un Axie. */
+  status: Text
   facing: number
   /** Hauteur d'affichage voulue, en cases. L'échelle en découle. */
   cells: number
 }
+
+/**
+ * Style des pastilles de statut.
+ *
+ * Un glyphe par effet, jamais la couleur seule : c'est l'exigence
+ * d'accessibilité du concours, et à 43 px la case un halo coloré autour d'un
+ * sprite déjà coloré ne se voit pas. Le contour noir les détache du décor
+ * clair comme du sprite. La légende est sur la page « Contrôles ».
+ */
+const STATUS_STYLE = new TextStyle({
+  fontSize: 13,
+  fill: 0xffffff,
+  stroke: 0x1b221e,
+  strokeThickness: 3,
+})
 
 /**
  * Les squelettes du kit ne partagent aucune échelle commune : un slime fait 475
@@ -41,9 +59,11 @@ export class WorldView {
     const root = new Container()
     const spine = makeSpine(key)
     const bar = new Graphics()
-    root.addChild(spine, bar)
+    const status = new Text('', STATUS_STYLE)
+    status.anchor.set(0.5, 1)
+    root.addChild(spine, bar, status)
     this.game.unitLayer.addChild(root)
-    v = { root, spine, bar, facing: 1, cells }
+    v = { root, spine, bar, status, facing: 1, cells }
     this.visuals.set(uid, v)
     return v
   }
@@ -106,6 +126,14 @@ export class WorldView {
       const moving = e.blockedBy < 0
       playAnim(v.spine, moving ? String(ANIM.enemy.walk) : String(ANIM.enemy.attack), true, [String(ANIM.enemy.walk)])
       this.drawBar(v, e.hp / e.maxHp, c * 0.6, 0xff6b6b)
+
+      // Pastilles de statut : un glyphe par effet, jamais la couleur seule.
+      // La comparaison évite de régénérer la texture du texte à chaque trame ;
+      // sans elle, Pixi redessine et remonte au GPU 60 fois par seconde et par
+      // chimère un texte qui n'a pas bougé.
+      const glyphs = e.statuses.map((s) => STATUS_GLYPH[s.id]).join('')
+      if (v.status.text !== glyphs) v.status.text = glyphs
+      v.status.position.set(0, -c * 0.95)
     }
 
     for (const [uid, v] of this.visuals) {

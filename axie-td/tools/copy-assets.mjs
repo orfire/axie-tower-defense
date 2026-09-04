@@ -119,6 +119,29 @@ for (const id of sfxNeeded) {
   bytes += size(out)
 }
 
+// --- Icônes de classe ---
+// Six emblèmes de 64 px : une patte, un poisson, une feuille, une plume, un
+// papillon, une patte de reptile. La silhouette porte la classe à elle seule,
+// la couleur ne fait que la redire : c'est ce qui les rend utilisables comme
+// badge d'aura et comme pastille de fiche sans enfreindre la règle du concours
+// (« aucune information portée par la seule couleur »).
+// Ils sont inlinés en données URI plutôt que copiés dans public/ : moins de 2 Ko
+// chacun, ils partent avec le bundle et s'affichent dès la première frame, sans
+// requête réseau qui laisserait un rond vide sur l'écran de draft.
+const ICON_SRC = join(KIT2D, 'Sprites', 'axie-class-icon')
+const iconLines = []
+for (const cls of ['beast', 'aquatic', 'plant', 'bird', 'bug', 'reptile']) {
+  const src = join(ICON_SRC, `${cls}.png`)
+  if (!existsSync(src)) throw new Error(`Icône de classe absente : ${src}`)
+  const buf = await sharp(src).resize(48, 48).webp({ quality: 90 }).toBuffer()
+  iconLines.push(`  ${cls}: 'data:image/webp;base64,${buf.toString('base64')}',`)
+}
+writeFileSync(
+  join(ROOT, 'src', 'ui', 'icons.generated.ts'),
+  '// Généré par tools/copy-assets.mjs. Ne pas modifier à la main.\n'
+  + `export const CLASS_ICON: Record<string, string> = {\n${iconLines.join('\n')}\n}\n`,
+)
+
 writeFileSync(join(PUB, 'assets-manifest.json'), JSON.stringify({
   spine: spineDirs.length, vfx: vfxNeeded, sfx: sfxNeeded, bytes,
 }, null, 2))

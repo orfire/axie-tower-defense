@@ -45,6 +45,7 @@ export function titleHtml(save: SaveData): string {
     <p class="tagline">La force vient des liens, pas des niveaux.</p>
     <button type="button" class="cta" data-go="map">Jouer</button>
     <button type="button" class="ghost" data-go="collection">Collection</button>
+    <button type="button" class="ghost" data-go="controls">Contrôles et appareils</button>
     <p class="legal">${totalStars(save)} étoiles sur ${MAX_STARS} · Assets Axie Infinity, Sky Mavis</p>
   </div>`
 }

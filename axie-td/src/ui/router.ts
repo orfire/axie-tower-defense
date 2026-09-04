@@ -1,5 +1,6 @@
 export type ScreenId =
   | 'title' | 'map' | 'brief' | 'draft' | 'play' | 'result' | 'defeat' | 'collection'
+  | 'controls'
 
 export type ScreenParams = Record<string, unknown>
 

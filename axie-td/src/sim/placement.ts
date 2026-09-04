@@ -1,7 +1,7 @@
 import { BALANCE, axieDef } from '../data/load'
-import type { Cell, ClassId } from '../data/types'
+import type { Cell, ClassId, Line } from '../data/types'
 import { recomputeAuras } from './auras'
-import { sameCell } from './grid'
+import { sameCell, type CellKind } from './grid'
 import type { AxieUnit } from './types'
 import { currentBudget, type World } from './world'
 
@@ -10,6 +10,20 @@ export function spentEnergy(w: World): number {
 }
 
 export type PlaceCheck = { ok: true } | { ok: false; reason: string }
+
+/**
+ * Vrai si une case de ce type accepte cette ligne, sans rien savoir de l'énergie
+ * ni de l'occupation.
+ *
+ * Extrait de `canPlace` pour que le rendu puisse distinguer les deux refus : une
+ * case barrée pendant un glissement dit « pas ce type d'Axie ici », pas « plus
+ * d'énergie », sans quoi tout le plateau se barre dès que le budget est épuisé.
+ * Le rendu lisait auparavant le libellé français du refus, qu'une reformulation
+ * aurait cassé en silence.
+ */
+export function kindAllowsLine(kind: CellKind, line: Line): boolean {
+  return BALANCE.cells[kind].allowed_lines.includes(line)
+}
 
 /** `movingUid` >= 0 quand on déplace un Axie déjà posé : sa case et son coût sont ignorés. */
 export function canPlace(w: World, axieId: string, cell: Cell, movingUid = -1): PlaceCheck {
@@ -22,7 +36,7 @@ export function canPlace(w: World, axieId: string, cell: Cell, movingUid = -1): 
 
   const kind = w.board.kindAt(cell)
   if (kind === null) return { ok: false, reason: 'Hors du plateau' }
-  if (!BALANCE.cells[kind].allowed_lines.includes(line)) {
+  if (!kindAllowsLine(kind, line)) {
     return {
       ok: false,
       reason: kind === 'path'
