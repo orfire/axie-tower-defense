@@ -4176,7 +4176,14 @@ function reusableGraphics(target: Container): Graphics {
   if (first instanceof Graphics) {
     // Les enfants ajoutés après le Graphics, comme les badges de classe de la
     // tâche 19, sont reconstruits à chaque appel : on les libère ici.
-    for (const extra of target.removeChildren(1)) extra.destroy()
+    //
+    // Le garde est indispensable. `Container.removeChildren(1)` lève un
+    // `RangeError` quand le conteneur n'a qu'un enfant, ce qui est le cas courant :
+    // Pixi n'accepte un intervalle vide que sur un conteneur entièrement vide.
+    // Sans lui, la fonction plante à chaque pose et laisse le glissé bloqué.
+    if (target.children.length > 1) {
+      for (const extra of target.removeChildren(1)) extra.destroy()
+    }
     first.clear()
     return first
   }
