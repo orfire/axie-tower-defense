@@ -5087,6 +5087,7 @@ cd axie-td && git add -A && git commit -m "feat: ouvrir les fiches à l'appui lo
 
 **Fichiers :**
 - Créer : `src/save/storage.ts`
+- Supprimer : `vitest.config.ts` (remplacé par une déclaration en tête du fichier de test)
 - Test : `tests/save/storage.test.ts`
 
 **Interfaces :**
@@ -5105,6 +5106,7 @@ cd axie-td && git add -A && git commit -m "feat: ouvrir les fiches à l'appui lo
 
 ```ts
 import { beforeEach, describe, expect, it } from 'vitest'
+import { LEVELS, MAX_STARS } from '../../src/data/load'
 import {
   emptySave, isLevelOpen, loadSave, recordResult, saveNow, totalStars, unlockedAxies,
 } from '../../src/save/storage'
@@ -5165,6 +5167,45 @@ describe('sauvegarde', () => {
     localStorage.setItem('axietd.save', '{ pas du json')
     expect(totalStars(loadSave())).toBe(0)
   })
+
+  it('borne un score trafiqué au maximum d’un niveau', () => {
+    // Une sauvegarde est un fichier que le joueur peut ouvrir. Sans borne, y
+    // écrire 999 étoiles ouvrirait toute la collection, et la règle « aucun
+    // déblocage n'est stocké » ne protégerait plus de rien.
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: { 1: 999 } }))
+    const s = loadSave()
+    expect(s.stars['1']).toBe(3)
+    expect(totalStars(s)).toBe(3)
+  })
+
+  it('ignore un niveau qui n’existe pas', () => {
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: { 1: 2, 99: 3 } }))
+    const s = loadSave()
+    expect(s.stars['99']).toBeUndefined()
+    expect(totalStars(s)).toBe(2)
+  })
+
+  it('survit à un JSON valide mais de mauvaise forme', () => {
+    // Celui-ci ne lève rien : sans filtrage par champ, il traverserait le catch.
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars: 'x', lastDraft: 7 }))
+    const s = loadSave()
+    expect(totalStars(s)).toBe(0)
+    expect(s.lastDraft).toEqual({})
+  })
+
+  it('ne garde d’un draft que des Axies existants', () => {
+    localStorage.setItem('axietd.save', JSON.stringify({
+      version: 1, stars: {}, lastDraft: { 1: ['olek', 'inexistant', 42] },
+    }))
+    expect(loadSave().lastDraft['1']).toEqual(['olek'])
+  })
+
+  it('ne dépasse jamais le total maximal, même trafiqué', () => {
+    const stars: Record<string, number> = {}
+    for (const l of LEVELS) stars[String(l.id)] = 99
+    localStorage.setItem('axietd.save', JSON.stringify({ version: 1, stars }))
+    expect(totalStars(loadSave())).toBe(MAX_STARS)
+  })
 })
 ```
 
@@ -5179,7 +5220,7 @@ Attendu : ÉCHEC sur l'import de `../../src/save/storage`.
 - [ ] **Étape 3 : Écrire `src/save/storage.ts`**
 
 ```ts
-import { LEVELS, PLAYABLE } from '../data/load'
+import { BALANCE, LEVELS, PLAYABLE } from '../data/load'
 
 const KEY = 'axietd.save'
 
@@ -5197,7 +5238,49 @@ export function emptySave(): SaveData {
   return { version: 1, stars: {}, lastDraft: {}, speed2x: false, mute: false }
 }
 
-/** Une sauvegarde absente, vide ou illisible donne une partie neuve. */
+/** Score maximal d'un niveau, lu depuis les données plutôt que supposé. */
+const MAX_PER_LEVEL = Math.max(...Object.values(BALANCE.level.stars_by_lives))
+
+/**
+ * Ne retient que des scores plausibles.
+ *
+ * Une sauvegarde est un fichier texte que le joueur peut ouvrir et modifier.
+ * Sans ce filtre, y écrire 999 étoiles à un niveau ouvrirait toute la collection :
+ * la règle « aucun déblocage n'est stocké » ne protège de rien si le total dont
+ * ils dérivent n'est pas borné. Un identifiant de niveau inconnu est ignoré.
+ */
+function cleanStars(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  const connus = new Set(LEVELS.map((l) => String(l.id)))
+  for (const [id, valeur] of Object.entries(raw as Record<string, unknown>)) {
+    if (!connus.has(id)) continue
+    if (typeof valeur !== 'number' || !Number.isFinite(valeur)) continue
+    out[id] = Math.min(MAX_PER_LEVEL, Math.max(0, Math.floor(valeur)))
+  }
+  return out
+}
+
+/** Ne retient que des drafts faits d'Axies existants et jouables. */
+function cleanDrafts(raw: unknown): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  const connus = new Set(PLAYABLE.map((a) => a.id))
+  for (const [id, valeur] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(valeur)) continue
+    const ids = valeur.filter((x): x is string => typeof x === 'string' && connus.has(x))
+    if (ids.length > 0) out[id] = ids.slice(0, 5)
+  }
+  return out
+}
+
+/**
+ * Une sauvegarde absente, vide, illisible ou malformée donne une partie neuve.
+ *
+ * Un fichier peut très bien être du JSON valide et avoir la mauvaise forme :
+ * `{"version":1,"stars":"x"}` ne lève rien et traverserait le `catch` sans être
+ * vu. Chaque champ est donc filtré, pas seulement la version.
+ */
 export function loadSave(): SaveData {
   try {
     const raw = localStorage.getItem(KEY)
@@ -5206,10 +5289,10 @@ export function loadSave(): SaveData {
     if (parsed.version !== 1) return emptySave()
     return {
       version: 1,
-      stars: parsed.stars ?? {},
-      lastDraft: parsed.lastDraft ?? {},
-      speed2x: parsed.speed2x ?? false,
-      mute: parsed.mute ?? false,
+      stars: cleanStars(parsed.stars),
+      lastDraft: cleanDrafts(parsed.lastDraft),
+      speed2x: parsed.speed2x === true,
+      mute: parsed.mute === true,
     }
   } catch {
     return emptySave()
@@ -5269,21 +5352,19 @@ export function nextUnlock(data: SaveData): { id: string; name: string; missing:
 
 - [ ] **Étape 4 : Configurer Vitest pour donner accès à `localStorage`**
 
-Créer `vitest.config.ts` à la racine de `axie-td/` :
+Pas de fichier de configuration. `environmentMatchGlobs` est déprécié dans Vitest 3
+et avertit à chaque exécution ; surtout, une configuration séparée fait cesser la
+lecture de `vite.config.ts` pendant les tests, ce qui deviendrait un piège silencieux
+le jour où un alias y sera ajouté.
+
+Seul ce fichier de test a besoin d'un environnement navigateur. On le déclare donc
+en tête du fichier, là où le besoin existe :
 
 ```ts
-import { defineConfig } from 'vitest/config'
-
-export default defineConfig({
-  test: {
-    // Les tests de simulation tournent en Node, ceux de sauvegarde ont besoin du DOM.
-    environmentMatchGlobs: [
-      ['tests/save/**', 'jsdom'],
-      ['tests/ui/**', 'jsdom'],
-    ],
-  },
-})
+// @vitest-environment jsdom
 ```
+
+Cette ligne doit être la toute première du fichier, avant les imports.
 
 Puis installer l'environnement DOM :
 
@@ -5297,7 +5378,7 @@ cd axie-td && npm install -D jsdom
 cd axie-td && npx vitest run tests/save/storage.test.ts
 ```
 
-Attendu : 8 tests passent.
+Attendu : 13 tests passent, soit 123 avec les 110 des tâches précédentes.
 
 - [ ] **Étape 6 : Commiter**
 
