@@ -17,6 +17,7 @@ import { Hud } from './ui/hud'
 import { Tray } from './ui/tray'
 import { DragDrop, type DragState } from './ui/dragdrop'
 import { drawAuraLinks, drawOverlay } from './ui/overlay'
+import { CardOverlay } from './ui/cards'
 import { pxToCell, unitToPx } from './render/layout'
 
 const host = document.querySelector<HTMLElement>('#app')
@@ -80,6 +81,9 @@ hud.muteBtn.addEventListener('click', () => {
 
 const tray = new Tray()
 tray.mount(host)
+
+const cards = new CardOverlay()
+cards.mount(host)
 
 // Flash rouge plein écran quand une chimère sort : pas de son ni de VFX kit
 // dédiés à une fuite, juste un signal d'écran (et une vibration sur mobile).
@@ -209,6 +213,40 @@ dragDrop.attach(game.app.view as HTMLCanvasElement)
 
 tray.onPick((axieId, px, py, e) => {
   dragDrop.startFromTray(axieId, px, py, e)
+})
+
+// --- Fiches d'Axie et de chimère --------------------------------------------
+
+// Appui long sur le bac : 400 ms sans bouger ouvre la fiche au lieu de glisser.
+// Le minuteur est annulé au déplacement, pas seulement au relâchement, sinon
+// un glissement qui démarre lentement ouvre une fiche derrière le doigt et le
+// joueur se retrouve à glisser un Axie sous une fenêtre modale.
+let pressTimer: number | undefined
+tray.el.addEventListener('pointerdown', (e) => {
+  const slot = (e.target as HTMLElement).closest<HTMLElement>('.slot')
+  const id = slot?.dataset.axieId
+  if (!id) return
+  pressTimer = window.setTimeout(() => { cards.showAxie(id) }, 400)
+})
+for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
+  tray.el.addEventListener(evt, () => { window.clearTimeout(pressTimer) })
+}
+
+// Pendant une vague, un tap sur le plateau ouvre la fiche de ce qui s'y trouve.
+// Hors vague on n'ajoute rien : ce serait le même geste que celui qui démarre
+// un glissement d'Axie déjà posé.
+const canvas = game.app.view as HTMLCanvasElement
+canvas.addEventListener('pointerdown', (e) => {
+  if (world.phase !== 'wave') return
+  const cell = pxToCell(game.layout, e.clientX, e.clientY)
+  if (!cell) return
+  const axie = world.axies.find((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])
+  if (axie) { cards.showAxie(axie.axieId); return }
+  const enemy = world.enemies.find((en) => {
+    const c = world.board.cellAt(en.d)
+    return c[0] === cell[0] && c[1] === cell[1]
+  })
+  if (enemy) cards.showEnemy(enemy.type)
 })
 
 refreshChrome()

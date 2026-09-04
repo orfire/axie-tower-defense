@@ -33,6 +33,9 @@ export class Tray {
         : ''
       slot.setAttribute('aria-label', `${def.name}, ${cls}, coût ${cost}${etat}`)
       slot.innerHTML = `<span class="cost">${cost}</span><i class="ic ic-${cls}"></i><span class="nm">${def.name}</span>`
+      // Porté par l'emplacement pour que l'appui long (câblé dans main.ts) sache
+      // quel Axie ouvrir, sans dépendre de l'ordre du bac.
+      slot.dataset.axieId = id
       slot.addEventListener('pointerdown', (e) => {
         if (slot.disabled) return
         this.pick?.(id, e.clientX, e.clientY, e)
