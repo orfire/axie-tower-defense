@@ -4674,15 +4674,16 @@ cd axie-td && git add -A && git commit -m "feat: effets visuels additifs, nombre
 
 **Fichiers :**
 - Créer : `src/ui/cards.ts`
-- Modifier : `src/style.css`, `src/main.ts`
+- Modifier : `src/style.css`, `src/main.ts`, `src/ui/tray.ts`
 - Test : `tests/ui/cards.test.ts`
 
 **Interfaces :**
-- Consomme : `axieDef`, `BALANCE`, `auraSources`.
+- Consomme : `axieDef`, `BALANCE`.
 - Produit :
-  - `function axieCardHtml(axieId: string, unit?: AxieUnit, world?: World): string`
+  - `function axieCardHtml(axieId: string): string`
   - `function enemyCardHtml(type: string): string`
-  - `class CardOverlay` avec `showAxie(...)`, `showEnemy(...)`, `hide()`
+  - `const CLASS_FR: Record<string, string>`
+  - `class CardOverlay` avec `mount(parent)`, `showAxie(axieId)`, `showEnemy(type)`, `hide()`
 
 **Pourquoi cette tâche compte plus qu'il n'y paraît :** « Axie Core » pèse 35 % de la note du concours, et notre angle est *les traits et les relations*. La fiche d'Axie est l'endroit où le jury voit le lien entre les 6 parts d'un Axie et ce qu'il fait sur le plateau. Elle doit montrer chaque part, sa classe et le bonus qu'elle apporte.
 
@@ -4899,7 +4900,69 @@ Et à `src/style.css` :
 .card-close { width: 100%; margin-top: 14px; height: 40px; border: 0; border-radius: 12px; background: #2b3a33; color: #fff; font: inherit; font-weight: 600; }
 ```
 
-- [ ] **Étape 6 : Lancer toute la suite**
+- [ ] **Étape 6 : Câbler l'overlay dans `src/main.ts`**
+
+Sans ce câblage, la fiche existe mais rien ne l'ouvre. Deux gestes suffisent, choisis
+pour ne pas entrer en conflit avec le glisser-déposer :
+
+- **Appui long sur un emplacement du bac**, 400 ms sans déplacement du doigt. Le geste
+  est annulé dès que le glissement démarre, donc les deux ne se déclenchent jamais ensemble.
+- **Tap sur une unité du plateau pendant une vague.** Le placement est verrouillé à ce
+  moment-là, donc la case est libre de tout autre usage.
+
+```ts
+import { CardOverlay } from './ui/cards'
+import { pxToCell } from './render/layout'
+
+const cards = new CardOverlay()
+cards.mount(host)
+
+// Appui long sur le bac : 400 ms sans bouger ouvre la fiche au lieu de glisser.
+let pressTimer: number | undefined
+tray.el.addEventListener('pointerdown', (e) => {
+  const slot = (e.target as HTMLElement).closest<HTMLElement>('.slot')
+  const id = slot?.dataset.axieId
+  if (!id) return
+  pressTimer = window.setTimeout(() => { cards.showAxie(id) }, 400)
+})
+for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
+  tray.el.addEventListener(evt, () => { window.clearTimeout(pressTimer) })
+}
+
+// Pendant une vague, un tap sur le plateau ouvre la fiche de ce qui s'y trouve.
+game.app.view.addEventListener?.('pointerdown', (e) => {
+  const p = e as PointerEvent
+  if (world.phase !== 'wave') return
+  const cell = pxToCell(game.layout, p.clientX, p.clientY)
+  if (!cell) return
+  const axie = world.axies.find((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])
+  if (axie) { cards.showAxie(axie.axieId); return }
+  const enemy = world.enemies.find((en) => {
+    const c = world.board.cellAt(en.d)
+    return c[0] === cell[0] && c[1] === cell[1]
+  })
+  if (enemy) cards.showEnemy(enemy.type)
+})
+```
+
+Le bac doit porter l'identifiant pour que l'appui long sache quoi ouvrir. Dans
+`src/ui/tray.ts`, ajouter une ligne à la construction de chaque emplacement :
+
+```ts
+      slot.dataset.axieId = id
+```
+
+- [ ] **Étape 7 : Vérifier au navigateur**
+
+```bash
+cd axie-td && npm run dev
+```
+
+Attendu : un appui long sur un emplacement du bac ouvre la fiche, avec les six parts,
+leur classe en toutes lettres et le bonus de chacune. Le bouton « Fermer » la referme,
+comme un tap en dehors. Un glissement normal n'ouvre jamais la fiche.
+
+- [ ] **Étape 8 : Lancer toute la suite**
 
 ```bash
 cd axie-td && npm test && npx tsc --noEmit
@@ -4907,7 +4970,7 @@ cd axie-td && npm test && npx tsc --noEmit
 
 Attendu : tout passe.
 
-- [ ] **Étape 7 : Commiter**
+- [ ] **Étape 9 : Commiter**
 
 ```bash
 cd axie-td && git add -A && git commit -m "feat: fiches d'Axie avec les 6 parts et fiches de chimère"
