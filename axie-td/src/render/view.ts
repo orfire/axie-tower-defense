@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import type { Spine } from 'pixi-spine'
+import type { Tier } from '../data/types'
 import type { World } from '../sim/world'
 import { center } from '../sim/grid'
 import type { GameApp } from './app'
@@ -12,7 +13,18 @@ type Visual = {
   spine: Spine
   bar: Graphics
   facing: number
+  /** Hauteur d'affichage voulue, en cases. L'échelle en découle. */
+  cells: number
 }
+
+/**
+ * Les squelettes du kit ne partagent aucune échelle commune : un slime fait 475
+ * unités de haut, un loup 801, un ours 1858. Un diviseur fixe donnerait un slime
+ * correct et un ours de six cases. On normalise donc chaque squelette sur une
+ * hauteur voulue, exprimée en cases, et la hiérarchie visuelle vient de là.
+ */
+const AXIE_CELLS = 1.0
+const ENEMY_CELLS: Record<Tier, number> = { normal: 0.95, miniboss: 1.4, boss: 1.9 }
 
 /**
  * Miroir visuel de l'état de simulation. Ne modifie jamais le monde :
@@ -23,18 +35,27 @@ export class WorldView {
 
   constructor(readonly game: GameApp) {}
 
-  private ensure(uid: number, key: string, scale: number): Visual {
+  private ensure(uid: number, key: string, cells: number): Visual {
     let v = this.visuals.get(uid)
     if (v) return v
     const root = new Container()
     const spine = makeSpine(key)
-    spine.scale.set(scale)
     const bar = new Graphics()
     root.addChild(spine, bar)
     this.game.unitLayer.addChild(root)
-    v = { root, spine, bar, facing: 1 }
+    v = { root, spine, bar, facing: 1, cells }
     this.visuals.set(uid, v)
     return v
+  }
+
+  /**
+   * Échelle et sens, réappliqués à chaque frame plutôt qu'à la création : la
+   * taille de case change au redimensionnement, et le sens de marche à chaque virage.
+   */
+  private applyScale(v: Visual): void {
+    const natural = v.spine.spineData.height || 800
+    const s = (v.cells * this.game.layout.cell) / natural
+    v.spine.scale.set(s * v.facing, s)
   }
 
   private drawBar(v: Visual, ratio: number, width: number, color: number): void {
@@ -54,25 +75,27 @@ export class WorldView {
 
     for (const a of world.axies) {
       seen.add(a.uid)
-      const v = this.ensure(a.uid, `axie:${a.axieId}`, (c * 0.9) / 220)
+      const v = this.ensure(a.uid, `axie:${a.axieId}`, AXIE_CELLS)
       const p = unitToPx(layout, center(a.cell).x, center(a.cell).y)
-      v.root.position.set(p.x, p.y + c * 0.32)
+      // Les squelettes ont leur origine aux pieds : on pose donc l'unité sur le
+      // bas de sa case plutôt qu'au centre, sinon elle flotte au-dessus.
+      v.root.position.set(p.x, p.y + c * 0.42)
       v.root.alpha = a.ko ? 0.25 : 1
-      v.spine.scale.x = Math.abs(v.spine.scale.x) * v.facing
+      this.applyScale(v)
       playAnim(v.spine, a.ko ? ANIM.axie_ko.spine : ANIM.axie_idle.spine, !a.ko, [ANIM.axie_ko.fallback])
       this.drawBar(v, a.hp / a.maxHp, c * 0.7, PALETTE.classes[a.cls])
     }
 
     for (const e of world.enemies) {
       seen.add(e.uid)
-      const v = this.ensure(e.uid, `enemy:${e.type}`, (c * 0.85) / 240)
+      const v = this.ensure(e.uid, `enemy:${e.type}`, ENEMY_CELLS[e.tier])
       const pos = world.board.posAt(e.d)
       const p = unitToPx(layout, pos.x, pos.y)
       // Sens de marche : les sprites Spine sont vus de profil.
       const ahead = world.board.posAt(Math.min(e.d + 0.3, world.board.length - 1))
       if (Math.abs(ahead.x - pos.x) > 1e-6) v.facing = ahead.x >= pos.x ? 1 : -1
-      v.spine.scale.x = Math.abs(v.spine.scale.x) * v.facing
-      v.root.position.set(p.x, p.y + c * 0.3)
+      this.applyScale(v)
+      v.root.position.set(p.x, p.y + c * 0.42)
       const moving = e.blockedBy < 0
       playAnim(v.spine, moving ? String(ANIM.enemy.walk) : String(ANIM.enemy.attack), true, [String(ANIM.enemy.walk)])
       this.drawBar(v, e.hp / e.maxHp, c * 0.6, 0xff6b6b)
