@@ -38,6 +38,46 @@ function reusableGraphics(target: Container): Graphics {
 }
 
 /**
+ * Zones d'aura marquées AU SOL, sous les unités.
+ *
+ * Une aura ne porte que sur les quatre cases orthogonales (GDD §5) : on peint
+ * ces cases à la couleur de la classe de l'Axie qui les couvre. C'est la seule
+ * façon de lire la portée d'une aura avant de poser un allié dedans — les
+ * liserés, eux, n'apparaissent qu'une fois la liaison établie.
+ *
+ * Un Axie sur une colline n'a pas d'aura (GDD §4) : il ne marque rien.
+ *
+ * La couleur seule ne suffit pas à identifier la classe, ce que le règlement du
+ * concours interdit. Ici l'information reste lisible sans elle : la source est
+ * l'Axie voisin, visible à côté de sa marque. Le badge de classe de la tâche 19
+ * viendra lever l'ambiguïté quand deux zones se recouvrent.
+ */
+export function drawAuraZones(target: Container, world: World, layout: Layout): void {
+  const g = reusableGraphics(target)
+  const c = layout.cell
+  const inset = c * 0.09
+
+  for (const a of world.axies) {
+    if (a.ko || a.kind === 'hill') continue
+    const color = PALETTE.classes[a.cls]
+    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const col = a.cell[0] + dc
+      const row = a.cell[1] + dr
+      if (col < 0 || col >= COLS || row < 0 || row >= ROWS) continue
+      const p = cellToPx(layout, col, row)
+      // Le liseré porte l'essentiel : un remplissage assez opaque pour se voir
+      // sur la plaine claire vire au gris sale sur le brun du chemin.
+      g.beginFill(color, 0.26)
+        .drawRoundedRect(p.x + inset, p.y + inset, c - inset * 2, c - inset * 2, c * 0.22)
+        .endFill()
+      g.lineStyle(Math.max(1.5, c * 0.045), color, 0.8)
+        .drawRoundedRect(p.x + inset, p.y + inset, c - inset * 2, c - inset * 2, c * 0.22)
+        .lineStyle(0)
+    }
+  }
+}
+
+/**
  * Liserés d'aura, dessinés AU-DESSUS des unités.
  * Ils vivent dans la couche d'effets et non dans celle des surbrillances, sinon
  * les sprites les recouvrent entièrement : deux Axies voisins se touchent presque,

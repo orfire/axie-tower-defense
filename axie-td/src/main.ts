@@ -16,18 +16,24 @@ import { Container } from 'pixi.js'
 import { Hud } from './ui/hud'
 import { Tray } from './ui/tray'
 import { DragDrop, type DragState } from './ui/dragdrop'
-import { drawAuraLinks, drawOverlay } from './ui/overlay'
+import { drawAuraLinks, drawAuraZones, drawOverlay } from './ui/overlay'
 import { CardOverlay } from './ui/cards'
 import { pxToCell, unitToPx } from './render/layout'
 
 const host = document.querySelector<HTMLElement>('#app')
 if (!host) throw new Error('#app introuvable')
 
-// Draft en dur pour la vérification manuelle (GDD §7 : le draft réel viendra d'un
-// écran de sélection, hors scope de cette tâche).
-const DRAFT = ['olek', 'momo', 'puffy', 'buba', 'pomodoro']
+// Bac de développement (GDD §7 : le draft réel viendra d'un écran de sélection,
+// tâche 17). `?niveau=N` choisit le niveau à tester, sinon le premier.
+const wanted = Number(new URLSearchParams(location.search).get('niveau'))
+const levelId = Number.isFinite(wanted) ? Math.min(Math.max(Math.trunc(wanted), 1), 8) : 1
 
-const world = createWorld(1)
+const world = createWorld(levelId)
+
+// Sur les niveaux à draft libre, une main couvrant les six classes : c'est le
+// seul moyen d'éprouver les auras et le triangle tant que l'écran de draft
+// n'existe pas. Dusk est hors v1.
+const DRAFT = world.level.draft.forced ?? ['olek', 'momo', 'puffy', 'buba', 'pomodoro', 'venoki']
 const game = new GameApp(host)
 const view = new WorldView(game)
 
@@ -38,8 +44,11 @@ const view = new WorldView(game)
 // relecture de la tâche 13). Le fantôme du glissé vit dans la même couche
 // d'effets, après les liserés, pour rester visible par-dessus tout le reste
 // pendant le geste.
+const auraZonesGfx = new Container()
 const overlayGfx = new Container()
-game.overlayLayer.addChild(overlayGfx)
+// Les zones d'aura d'abord : la surbrillance des cases valides pendant un
+// glissement doit rester lisible par-dessus elles.
+game.overlayLayer.addChild(auraZonesGfx, overlayGfx)
 const auraLinksGfx = new Container()
 const dragLayer = new Container()
 game.fxLayer.addChild(auraLinksGfx, dragLayer)
@@ -128,6 +137,7 @@ function refreshChrome(): void {
   tray.update(world, DRAFT)
   launchBtn.disabled = world.phase !== 'placement'
   drawOverlay(overlayGfx, world, game.layout, dragDrop.state)
+  drawAuraZones(auraZonesGfx, world, game.layout)
   drawAuraLinks(auraLinksGfx, world, game.layout)
 }
 
@@ -207,6 +217,14 @@ const dragDrop = new DragDrop({
   onUpdate: (state) => {
     updateGhost(state)
     drawOverlay(overlayGfx, world, game.layout, state)
+    // Les zones suivent l'Axie en main : on lit où portera son aura avant de
+    // lâcher, ce qui est tout l'intérêt de les montrer pendant le placement.
+    drawAuraZones(auraZonesGfx, world, game.layout)
+  },
+  onTap: (_uid, axieId) => {
+    clearGhost()
+    cards.showAxie(axieId)
+    refreshChrome()
   },
 })
 dragDrop.attach(game.app.view as HTMLCanvasElement)
@@ -248,16 +266,14 @@ for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
   })
 }
 
-// Pendant une vague, un tap sur le plateau ouvre la fiche de ce qui s'y trouve.
-// Hors vague on n'ajoute rien : ce serait le même geste que celui qui démarre
-// un glissement d'Axie déjà posé.
+// Les Axies posés passent par `onTap` du glisser-déposer, dans les deux phases.
+// Il ne reste ici que les chimères, que le glissement ne connaît pas.
 const canvas = game.app.view as HTMLCanvasElement
 canvas.addEventListener('pointerdown', (e) => {
   if (world.phase !== 'wave') return
   const cell = pxToCell(game.layout, e.clientX, e.clientY)
   if (!cell) return
-  const axie = world.axies.find((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])
-  if (axie) { cards.showAxie(axie.axieId); return }
+  if (world.axies.some((a) => a.cell[0] === cell[0] && a.cell[1] === cell[1])) return
   const enemy = world.enemies.find((en) => {
     const c = world.board.cellAt(en.d)
     return c[0] === cell[0] && c[1] === cell[1]

@@ -7,6 +7,14 @@ import type { World } from '../sim/world'
 const SNAP_RADIUS = 2.2
 
 /**
+ * Tolérance d'un tap, en pixels CSS. Un doigt ne se pose jamais parfaitement
+ * immobile : sous ce seuil le geste est lu comme un tap, au-delà comme un
+ * glissement. 10 px est la valeur usuelle du tactile, plus serré on perd des
+ * taps légitimes, plus large on ouvre une fiche au début d'un vrai déplacement.
+ */
+const TAP_SLOP = 10
+
+/**
  * Case valide la plus proche du doigt. L'aimantation évite d'exiger de la précision
  * sur des cases de 43 px (GDD §11.3). Renvoie `null` si rien de valide n'est assez proche.
  */
@@ -45,6 +53,12 @@ export type DragEvents = {
   axieAt: (cell: Cell) => number | null
   onDrop: (state: DragState) => void
   onUpdate: (state: DragState) => void
+  /**
+   * Tap sur un Axie déjà posé : appui et relâchement au même endroit, sans
+   * déplacement. C'est le seul geste disponible pour consulter une fiche
+   * pendant le placement, où l'appui sur un Axie démarre sinon un glissement.
+   */
+  onTap: (uid: number, axieId: string) => void
 }
 
 /**
@@ -59,6 +73,9 @@ export class DragDrop {
   /** Identifiant du pointeur qui mène le geste, -1 hors glissement. */
   private pointerId = -1
   private captured?: HTMLElement
+  /** Point d'appui, pour distinguer un tap d'un glissement au relâchement. */
+  private startX = 0
+  private startY = 0
 
   constructor(private readonly ev: DragEvents) {}
 
@@ -134,7 +151,13 @@ export class DragDrop {
     const w = this.ev.getWorld()
     const a = w.axies.find((x) => x.uid === uid)
     if (!a) return
+    // Pendant une vague rien ne se déplace : le geste ne peut être qu'un tap.
+    // Ouvrir tout de suite évite d'ouvrir une session de glissement qui
+    // dessinerait un fantôme et un cercle de portée en plein combat.
+    if (w.phase !== 'placement') { this.ev.onTap(a.uid, a.axieId); return }
     this.claim(e)
+    this.startX = e.clientX
+    this.startY = e.clientY
     this.state = { kind: 'fromBoard', uid, axieId: a.axieId, px: e.clientX, py: e.clientY, cell: a.cell }
     this.recompute()
   }
@@ -148,7 +171,10 @@ export class DragDrop {
 
   private up = (e: PointerEvent) => {
     if (this.state.kind === 'none' || this.foreign(e)) return
-    this.ev.onDrop(this.state)
+    const st = this.state
+    const still = Math.hypot(e.clientX - this.startX, e.clientY - this.startY) <= TAP_SLOP
+    if (st.kind === 'fromBoard' && still) this.ev.onTap(st.uid, st.axieId)
+    else this.ev.onDrop(st)
     this.release()
     this.state = { kind: 'none' }
     this.ev.onUpdate(this.state)
