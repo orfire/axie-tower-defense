@@ -12,9 +12,12 @@ permission it ships under, as the Vibeathon charter requires.
 | Class emblems, 48 px WebP, inlined as data URIs in `axie-td/src/ui/icons.generated.ts` | 6 | `axieinfinity/unity-axie-gtk2d`, `.../Sprites/axie-class-icon` | idem |
 | VFX atlases (additive-blend sprite sheets), PNG converted to WebP | 23 | `axieinfinity/axie-origins-asset-kit`, `web-vfx/public/vfx` | idem |
 | Sound effects, WAV converted to mono MP3 at 96 kb/s | 28 | `axieinfinity/axie-origins-asset-kit`, `web-vfx/public/sfx` | idem |
+| Music loops, WAV converted to mono MP3 at 48-80 kb/s | 5 | `axieinfinity/axie-origins-asset-kit`, `Assets/OriginsKit/PvE/Music` | idem |
 
-Total shipped asset weight: **21.97 MB** (23 037 495 bytes), against a
-self-imposed 25 MB budget enforced by `axie-td/tools/copy-assets.mjs`.
+Total shipped asset weight: **25.72 MB** (26972652 bytes), against a
+self-imposed 28 MB budget enforced by `axie-td/tools/copy-assets.mjs` and by
+a test. The five music loops account for 3.8 MB of that; MP3 is already
+compressed, so those megabytes survive the server's own compression.
 The exact inventory is machine-written to `axie-td/public/assets-manifest.json`.
 
 ## What is *not* in this repository
@@ -31,7 +34,8 @@ resource and "not an open-source dump", and that Epic Toon FX and other
 third-party Unity Asset Store packages must not be redistributed. This project
 therefore never re-publishes the kits. It converts only the files it actually
 plays — 19 of the 20 starter Axies, 20 chimeras, 23 of the 107 VFX atlases and
-28 of the 130 sound effects — into `axie-td/public/`, and ships those inside the
+28 of the 130 sound effects, 5 of the 15 music loops — into `axie-td/public/`,
+and ships those inside the
 game build. No Epic Toon FX file, no shop/home/sticker atlas, no HMAC key and no
 Firebase config is present.
 

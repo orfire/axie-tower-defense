@@ -129,7 +129,10 @@ Declared honestly; none of these is speculative.
    to a box. The `Contrôles` page carries the full legend as a text fallback.
 5. **Six starter Axies carry unvalidated working names** — Kestrel, Fennel,
    Marlin, Thistle, Bramble, Fang. They are placeholders, not official names.
-6. **No music.** Sound effects only, 28 of them, with a mute button.
+6. **Only three adventure music loops.** The kit ships three, so levels 1 to 7
+   share them in rotation; level 8 gets the boss loop and every menu screen
+   the home loop. A player going straight through the campaign hears the same
+   track return every three levels.
 7. **Fredoka is not bundled.** The stylesheet asks for it first, then
    `ui-rounded`, which resolves to SF Pro Rounded on iOS and macOS. On those
    platforms the intended rounded look holds; elsewhere the game falls back to

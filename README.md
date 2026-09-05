@@ -59,7 +59,7 @@ axie-td/            the game
   src/game/         session glue between UI intents and the simulation
   src/data/         typed loaders for data/*.json
   data/             generated game data (balance, axies, 8 levels, VFX map)
-  public/           converted Spine, VFX and SFX assets (22 MB)
+  public/           converted Spine, VFX, SFX and music assets (26 MB)
   tools/            gen-data.mjs, copy-assets.mjs, balance.ts
   tests/            187 Vitest tests, including architecture guards
 design/             GDD (source of truth) and the screen mock-up

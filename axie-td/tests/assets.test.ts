@@ -6,8 +6,17 @@ const PUB = join(process.cwd(), 'public')
 const manifest = JSON.parse(readFileSync(join(PUB, 'assets-manifest.json'), 'utf8'))
 
 describe('assets', () => {
-  it('reste sous le plafond de 25 Mo du dépôt', () => {
-    expect(manifest.bytes).toBeLessThan(25 * 1024 * 1024)
+  // Relevé de 25 à 28 Mo pour les cinq boucles de musique (3,8 Mo). Le MP3 est
+  // déjà compressé, la compression du serveur ne les réduira pas : ces méga-octets
+  // sont réels. Ils se chargent une piste à la fois, pas tous d'un coup.
+  it('reste sous le plafond de 28 Mo du dépôt', () => {
+    expect(manifest.bytes).toBeLessThan(28 * 1024 * 1024)
+  })
+
+  it('embarque les cinq boucles de musique', () => {
+    for (const id of ['home', 'pve_1', 'pve_2', 'pve_3', 'boss']) {
+      expect(existsSync(join(PUB, 'music', `${id}.mp3`)), `musique ${id} absente`).toBe(true)
+    }
   })
 
   it('minifie le JSON des squelettes', () => {

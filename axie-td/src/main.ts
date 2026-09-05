@@ -13,6 +13,7 @@ import { tickFloats } from './render/floats'
 import { consumeEvents } from './render/effects'
 import { pxToCell, unitToPx } from './render/layout'
 import { Sfx } from './audio/sfx'
+import { Music, trackFor } from './audio/music'
 import { CardOverlay } from './ui/cards'
 import { controlsHtml } from './ui/controls'
 import { DragDrop, type DragState } from './ui/dragdrop'
@@ -119,6 +120,8 @@ const redraw = () => {
 game.onResize(redraw)
 
 const sfx = new Sfx()
+// Le bouton de coupure est commun aux deux : le GDD §14 n'en prévoit qu'un.
+const music = new Music(sfx.muted)
 
 const hud = new Hud()
 hud.mount(gameUi)
@@ -134,7 +137,7 @@ function syncMuteBtn(): void {
 }
 syncMuteBtn()
 hud.muteBtn.addEventListener('click', () => {
-  sfx.toggleMute()
+  music.setMuted(sfx.toggleMute())
   syncMuteBtn()
 })
 
@@ -456,6 +459,11 @@ router.onEnter('draft', (p) => {
 
 router.onEnter('play', (p) => {
   const id = levelParam(p)
+  // Reporté dans l'état de navigation : les écrans « fiche » et « draft » le
+  // faisaient déjà, mais on entre aussi en jeu sans passer par eux — le
+  // raccourci `?niveau=`. Sans cette ligne, la musique et l'écran de fin
+  // restaient sur le niveau précédent.
+  nav.levelId = id
   const draft = Array.isArray(p.draft) && p.draft.length > 0
     ? (p.draft as string[])
     : session.suggestedDraft(id)
@@ -482,6 +490,9 @@ function screenHtml(): string {
 
 function render(): void {
   const playing = router.current === 'play' && !loading
+  // La piste suit l'écran. `Music.play` ignore une demande identique, donc
+  // passer du titre à la carte puis au draft ne recommence pas la boucle.
+  music.play(trackFor(router.current, nav.levelId))
   gameUi.hidden = !playing
   canvas.style.visibility = playing ? 'visible' : 'hidden'
   screensEl.hidden = playing

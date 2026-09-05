@@ -10,6 +10,7 @@ import sharp from 'sharp'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const KIT2D = join(ROOT, '..', 'unity-axie-gtk2d', 'Assets', 'AxieInfinity', 'AxieStandardAssets')
 const WEBVFX = join(ROOT, '..', 'axie-origins-asset-kit', 'web-vfx', 'public')
+const MUSIC_SRC = join(ROOT, '..', 'axie-origins-asset-kit', 'Assets', 'OriginsKit', 'PvE', 'Music')
 const PUB = join(ROOT, 'public')
 
 const axies = JSON.parse(readFileSync(join(ROOT, 'data', 'axies.json'), 'utf8')).axies
@@ -119,6 +120,36 @@ for (const id of sfxNeeded) {
   bytes += size(out)
 }
 
+// --- Musique ---
+// Cinq des quinze boucles du kit. Les dix autres sont saisonnières (Halloween,
+// lunaire, Noël, été) ou faites pour le PvP : hors sujet ici, et elles pèsent
+// dix fois plus lourd que celles qu'on garde.
+//
+// Les sources sont mono, et `boss` comme les `pve_*` sont échantillonnées à
+// 16 kHz : leur bande utile s'arrête à 8 kHz, encoder plus haut ne ferait
+// qu'occuper de la place. `home`, en 44,1 kHz, mérite le débit du dessus.
+const MUSIC = [
+  { id: 'home',  bitrate: '80k' },
+  { id: 'pve_1', bitrate: '48k' },
+  { id: 'pve_2', bitrate: '48k' },
+  { id: 'pve_3', bitrate: '48k' },
+  { id: 'boss',  bitrate: '48k' },
+]
+mkdirSync(join(PUB, 'music'), { recursive: true })
+for (const { id, bitrate } of MUSIC) {
+  const src = join(MUSIC_SRC, `${id}.wav`)
+  if (!existsSync(src)) {
+    throw new Error(`Musique absente : ${src}
+Elle vient de Assets/OriginsKit/PvE/Music du dépôt axie-origins-asset-kit, dossier non inclus dans la copie locale du kit.`)
+  }
+  const out = join(PUB, 'music', `${id}.mp3`)
+  execFileSync('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', src, '-c:a', 'libmp3lame', '-ac', '1', '-b:a', bitrate, out,
+  ])
+  bytes += size(out)
+}
+
 // --- Icônes de classe ---
 // Six emblèmes de 64 px : une patte, un poisson, une feuille, une plume, un
 // papillon, une patte de reptile. La silhouette porte la classe à elle seule,
@@ -149,13 +180,15 @@ writeFileSync(join(PUB, 'assets-manifest.json'), JSON.stringify({
 // Détail par catégorie : une régression de poids doit se voir tout de suite.
 const mb = (n) => (n / 1024 / 1024).toFixed(2)
 const sum = (pattern) => spineDirs.reduce((s, d) => s + size(join(d.out, pattern)), 0)
-console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length}`)
+console.log(`Spine ${spineDirs.length} · VFX ${vfxNeeded.length} · SFX ${sfxNeeded.length} · musique ${MUSIC.length}`)
 console.log(`  squelettes JSON ${mb(sum('skeleton.json'))} Mo · images ${mb(sum('skeleton.webp'))} Mo`)
 console.log(`  total ${mb(bytes)} Mo`)
 
 // Plafond d'hygiène du dépôt. Ce n'est pas ce que le joueur télécharge :
-// le serveur compresse, et les assets sont chargés par niveau.
-if (bytes > 25 * 1024 * 1024) {
-  console.error(`Budget d'assets dépassé : ${mb(bytes)} Mo > 25 Mo`)
+// le serveur compresse, et les assets sont chargés par niveau. Relevé de 25 à
+// 28 Mo pour les cinq boucles de musique, qui pèsent 3,8 Mo et que la
+// compression du serveur ne réduira pas, le MP3 étant déjà compressé.
+if (bytes > 28 * 1024 * 1024) {
+  console.error(`Budget d'assets dépassé : ${mb(bytes)} Mo > 28 Mo`)
   process.exit(1)
 }
