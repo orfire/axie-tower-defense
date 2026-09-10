@@ -134,7 +134,7 @@ Décisions actées le 03/09 :
 3. **Énergie fixée par vague, recyclable, coût par classe** (slots simples en repli).
 4. **3 PV cumulés par niveau, étoiles selon les fuites** (3 ★ = zéro fuite).
 5. **Classe + profil** : la classe fixe attaque / statut / aura ; le profil dérive des 6 parts et ajuste les stats. Dusk hors v1. Pas de cosmétique pur.
-6. **Plateau 7 × 10 sans zoom**, aimantation à la case. Les classes mêlée (Plante, Bête, Insecte) peuvent se poser **sur le chemin et bloquer**, sans plafond. Les classes distance en plaine.
+6. **Plateau 8 × 13 sans zoom** (révisé le 10/09, était 7 × 10), aimantation à la case. Les classes mêlée (Plante, Bête, Insecte) peuvent se poser **sur le chemin et bloquer**, sans plafond. Les classes distance en plaine.
 7. **Colline** : 1 à 2 cases par niveau, distance uniquement, intouchable sauf par les dryades. Prix : portée −1, aucune aura.
 8. **Direction artistique** (GDD §20) : personnages saturés, décor effacé, police arrondie cartoon. Edouard cherche des assets Homeland / Terrarium pour le décor.
 9. **Portrait assumé**, jeu mobile. Sur desktop, cadre portrait centré.

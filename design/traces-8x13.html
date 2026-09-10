@@ -1,0 +1,325 @@
+<title>Tracés de la campagne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Jetons repris de design/maquette-ecran.html. Le plateau garde les couleurs du
+   jeu (axie-td/src/render/app.ts) dans les deux thèmes : c'est le même plateau
+   qu'à l'écran, seul le cadre de la page change. */
+:root {
+  --bg: #ecefe6; --ink: #22302a; --muted: #5f6d64; --line: #cfd6c9; --card: #f7f8f3;
+  --accent: #e0742b; --on-accent: #1b221e;
+  --plain: #b6c4a5; --path: #9a7b5b; --path-edge: #5c4936; --hill: #c9c2b0; --hill-shadow: #8f8877;
+  --exit: #ffd23f; --board-ink: #22302a; --board-line: rgba(34, 48, 42, .16);
+  --heat: 224 116 43; --h1: .14; --h2: .3; --h3: .5; --h4: .72;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #1b221e; --ink: #eef0e8; --muted: #a4b0a6; --line: #37433c; --card: #232c27; --accent: #f08a3f; }
+}
+:root[data-theme="dark"] { --bg: #1b221e; --ink: #eef0e8; --muted: #a4b0a6; --line: #37433c; --card: #232c27; --accent: #f08a3f; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15.5px/1.55 Nunito, "Segoe UI", system-ui, sans-serif; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 40px 24px 72px; display: grid; gap: 36px; }
+
+.eyebrow { margin: 0; font: 700 12px/1.3 Nunito, system-ui, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 8px 0 12px; font: 700 clamp(32px, 4.4vw, 46px)/1.02 Fredoka, Nunito, sans-serif; text-wrap: balance; }
+.lede { margin: 0; max-width: 62ch; font-size: 17.5px; line-height: 1.5; }
+.section { margin: 0 0 14px; font: 600 20px/1.2 Fredoka, Nunito, sans-serif; text-wrap: balance; }
+code { font: 500 .88em "JetBrains Mono", ui-monospace, monospace; }
+
+.brief { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; align-items: start; padding-top: 28px; border-top: 1px solid var(--line); }
+@media (max-width: 880px) { .brief { grid-template-columns: 1fr; gap: 32px; } }
+
+.decisions { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: d; }
+.decisions li { display: grid; grid-template-columns: 30px 1fr; gap: 14px; align-items: start; max-width: 64ch; }
+.decisions li::before { counter-increment: d; content: counter(d); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 600 15px/1 Fredoka, Nunito, sans-serif; }
+.decisions strong { font-weight: 700; }
+.caveat { margin: 18px 0 0; padding-left: 44px; color: var(--muted); font-size: 14.5px; max-width: 64ch; }
+
+.keys { list-style: none; margin: 0 0 20px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 18px; font-size: 14.5px; }
+.keys li { display: flex; align-items: center; gap: 10px; }
+.k { width: 22px; height: 22px; flex: none; border-radius: 4px; display: block; }
+.k-plain { background: var(--plain); }
+.k-path { background: var(--path); }
+.k-hill { background: var(--hill); box-shadow: inset 0 -4px 0 var(--hill-shadow); border-radius: 6px; }
+.heat-title { margin: 0 0 10px; font-weight: 700; font-size: 14.5px; }
+.bins { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.bin { display: grid; gap: 5px; justify-items: center; font: 500 12px/1 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bin i { width: 46px; height: 24px; border-radius: 4px; display: block; background: var(--plain); }
+.bin.b1 i { background: linear-gradient(rgb(var(--heat) / var(--h1)), rgb(var(--heat) / var(--h1))), var(--plain); }
+.bin.b2 i { background: linear-gradient(rgb(var(--heat) / var(--h2)), rgb(var(--heat) / var(--h2))), var(--plain); }
+.bin.b3 i { background: linear-gradient(rgb(var(--heat) / var(--h3)), rgb(var(--heat) / var(--h3))), var(--plain); }
+.bin.b4 i { background: linear-gradient(rgb(var(--heat) / var(--h4)), rgb(var(--heat) / var(--h4))), var(--plain); }
+.small { margin: 0 0 14px; font-size: 13.5px; line-height: 1.5; color: var(--muted); max-width: 58ch; }
+.toggle { font: 600 14px/1 Nunito, system-ui, sans-serif; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+.toggle:hover { border-color: var(--muted); }
+.toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.levels-head { display: grid; gap: 4px; }
+.levels-head p { margin: 0; color: var(--muted); }
+.plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); gap: 20px; }
+.plate { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px 22px; display: grid; gap: 16px; align-content: start; }
+.plate-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.plate-head .eyebrow { flex-basis: 100%; }
+.plate-head h3 { margin: 0; font: 600 23px/1.15 Fredoka, Nunito, sans-serif; text-wrap: balance; }
+.shape { font: 600 13px/1 Nunito, system-ui, sans-serif; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); }
+.plate-body { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 620px) { .plate-body { grid-template-columns: 1fr; } .plan-main { max-width: 280px; } }
+.plan-main { margin: 0; }
+.plan { width: 100%; height: auto; display: block; }
+.plate-text { display: grid; gap: 12px; align-content: start; }
+.intent { margin: 0; max-width: 60ch; }
+.meta { margin: 0; font: 500 12.5px/1.5 "JetBrains Mono", ui-monospace, monospace; color: var(--muted); }
+.foes { margin: 0; font-size: 14.5px; }
+.foes span { font: 700 11.5px/1 Nunito, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+.fig { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; width: 100%; max-width: 300px; }
+.fig th, .fig td { padding: 5px 0; border-bottom: 1px solid var(--line); text-align: right; }
+.fig th[scope="row"] { text-align: left; font-weight: 600; }
+.fig thead th { font: 700 11.5px/1 Nunito, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 7px; }
+.fig td:nth-child(2) { font-weight: 700; padding-left: 14px; }
+.fig td:nth-child(3) { color: var(--muted); padding-left: 14px; }
+.fig small { font-weight: 500; color: var(--muted); font-size: 12px; display: block; }
+.note { margin: 0; font-size: 14px; color: var(--muted); max-width: 60ch; }
+.old { margin: 4px 0 0; display: flex; align-items: center; gap: 14px; }
+.old svg { width: 76px; flex: none; }
+.old figcaption { font-size: 13px; color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+footer { padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; max-width: 80ch; }
+footer p { margin: 0; }
+
+/* Plateau, en unités de case : 1 = une case. */
+.t-plain { fill: var(--plain); }
+.t-path { fill: var(--path); }
+.grid { stroke: var(--board-line); stroke-width: .03; }
+.frame { fill: none; stroke: rgba(34, 48, 42, .4); stroke-width: .05; }
+.h { fill: rgb(var(--heat)); }
+.h1 { opacity: var(--h1); } .h2 { opacity: var(--h2); } .h3 { opacity: var(--h3); } .h4 { opacity: var(--h4); }
+.route { fill: none; stroke: var(--path-edge); stroke-width: .06; stroke-linejoin: round; stroke-linecap: round; opacity: .35; }
+.dir { fill: var(--path-edge); opacity: .8; }
+.t-hill { fill: var(--hill); }
+.t-hill-shadow { fill: var(--hill-shadow); }
+.entry { fill: var(--board-ink); stroke: #fff; stroke-width: .05; stroke-linejoin: round; }
+.exit-halo { fill: none; stroke: var(--board-ink); stroke-width: .24; opacity: .3; }
+.exit { fill: none; stroke: var(--exit); stroke-width: .13; }
+.fork { fill: var(--board-ink); stroke: #fff; stroke-width: .05; }
+.hint { fill: none; stroke: #fff; stroke-width: .07; stroke-dasharray: .16 .1; }
+.hn { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .36px; font-weight: 500; fill: var(--board-ink); text-anchor: middle; dominant-baseline: central; }
+.tick { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .3px; font-weight: 500; fill: var(--muted); dominant-baseline: central; }
+.heat-off .h, .heat-off .hn { display: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Axie Tower Defense · plans de niveaux · 10 septembre 2026</p>
+    <h1>Tracés de la campagne</h1>
+    <p class="lede">Les huit niveaux redessinés sur la grille 8 × 13 validée le 10 septembre. En 7 × 10, cinq niveaux sur huit étaient le même serpentin ; ici chaque tracé porte une intention de jeu, et la chaleur montre où se trouvent les bons postes.</p>
+  </header>
+
+  <div class="brief">
+    <section aria-labelledby="dec-t">
+      <h2 id="dec-t" class="section">Ce qu'il faut valider</h2>
+      <ol class="decisions">
+        <li><span><strong>Les huit tracés</strong> ci-dessous, un par intention de jeu.</span></li>
+        <li><span><strong>Entrée et sortie sur n'importe quel bord.</strong> Le générateur imposait l'entrée en haut et la sortie en bas : c'est ce qui produisait cinq fois le même serpentin.</span></li>
+        <li><span><strong>Des segments verticaux longs.</strong> Le GDD §4 les limitait à trois cases, parce que les sprites sont vus de profil. En descente, une unité garde son dernier sens de marche ; l'ancienne tanière le faisait déjà sur neuf cases.</span></li>
+        <li><span><strong>La fourche du niveau 7</strong> : environ trois jours de code, faite en dernier. Sans elle, le niveau se joue sur le tronc et la branche gauche.</span></li>
+      </ol>
+      <p class="caveat">Rien n'est équilibré : vagues et budgets restent ceux d'aujourd'hui. Le banc d'essai repassera une fois les tracés validés.</p>
+    </section>
+
+    <section aria-labelledby="leg-t">
+      <h2 id="leg-t" class="section">Lire un plan</h2>
+      <ul class="keys">
+        <li><span class="k k-path"></span>Chemin, avec le sens de marche</li>
+        <li><span class="k k-plain"></span>Plaine</li>
+        <li><span class="k k-hill"></span>Colline</li>
+        <li><svg class="k" viewBox="0 0 1 1" aria-hidden="true"><rect width="1" height="1" rx=".18" class="t-path"/><polygon points=".76,.5 .32,.24 .32,.76" class="entry"/></svg>Entrée</li>
+        <li><svg class="k" viewBox="0 0 1 1" aria-hidden="true"><rect width="1" height="1" rx=".18" class="t-path"/><circle cx=".5" cy=".5" r=".3" class="exit-halo"/><circle cx=".5" cy=".5" r=".3" class="exit"/></svg>Sortie</li>
+        <li><svg class="k" viewBox="0 0 1 1" aria-hidden="true"><rect width="1" height="1" rx=".18" class="t-path"/><circle cx=".5" cy=".5" r=".17" class="fork"/></svg>Fourche</li>
+      </ul>
+      <p class="heat-title">Chaleur : cases de chemin à portée 2,5</p>
+      <div class="bins" aria-hidden="true">
+        <span class="bin b0"><i></i>0</span>
+        <span class="bin b1"><i></i>1–3</span>
+        <span class="bin b2"><i></i>4–6</span>
+        <span class="bin b3"><i></i>7–9</span>
+        <span class="bin b4"><i></i>10 et +</span>
+      </div>
+      <p class="small">Ce que voit un Aquatique ou un Reptile posé sur la case. Les valeurs de 7 et plus sont écrites sur le plan. L'Oiseau porte à 3,5 : il voit plus loin que la carte ne le montre. Le meilleur poste d'un niveau est sa valeur la plus haute.</p>
+      <button class="toggle" id="heat-toggle" type="button">Masquer la chaleur</button>
+    </section>
+  </div>
+
+  <section aria-labelledby="lv-t">
+    <div class="levels-head">
+      <h2 id="lv-t" class="section">Les huit niveaux</h2>
+      <p>Plan proposé à gauche, ancien plan en vignette. Coordonnées en [colonne, ligne], à partir de zéro.</p>
+    </div>
+    <div class="plates" id="plates"></div>
+  </section>
+
+  <footer>
+    <p>Tracés générés et vérifiés par <code>design/traces-8x13.mjs</code>, avec les règles du générateur de données : pas orthogonal, aucun contact d'un chemin avec sa propre trace, collines hors de contact et à portée des dryades. Relancer le script avec <code>--html</code> réécrit les données de cette planche.</p>
+  </footer>
+</div>
+
+<script id="traces-data" type="application/json">{"cols":8,"rows":13,"range":2.5,"levels":[{"id":1,"name":"La clairière","shape":"Serpentin doux","intent":"Deux lignes droites et une sortie au centre. Buba bloque sur la première, Momo tire depuis l'entre-deux : tout le tutoriel se lit d'un coup d'œil.","enemies":"Slimes","fallback":null,"den":false,"paths":[[[1,0],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[6,4],[6,5],[6,6],[6,7],[5,7],[4,7],[3,7],[3,8],[3,9],[3,10],[3,11],[3,12]]],"hills":[],"hillReach":0,"hillDist":[],"hint":[4,3],"length":21,"routes":[21],"turns":4,"plains":83,"best":9,"heat":[[3,null,3,2,0,0,0,0],[4,null,6,6,3,3,2,1],[5,null,7,7,5,5,4,3],[4,null,null,null,null,null,null,4],[3,4,5,5,7,7,null,5],[1,2,4,5,9,9,null,5],[0,1,3,4,7,7,null,5],[0,2,4,null,null,null,null,4],[0,3,5,null,7,7,4,3],[0,3,5,null,7,6,2,1],[0,3,5,null,5,3,0,0],[0,3,4,null,4,3,0,0],[0,2,3,null,3,2,0,0]],"old":{"path":[[3,0],[3,1],[2,1],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[2,6],[2,7],[2,8],[2,9]],"hills":[],"heat":[[3,5,5,null,3,2,0],[4,null,null,null,6,4,1],[5,null,9,10,8,5,3],[4,null,null,null,null,null,4],[4,7,9,11,9,null,5],[3,6,null,null,null,null,4],[3,5,null,7,7,4,3],[3,5,null,7,6,2,1],[3,4,null,4,3,0,0],[2,3,null,3,2,0,0]],"length":19,"turns":6,"best":11}},{"id":2,"name":"La lisière","shape":"Serpentin par le côté","intent":"Trois bandes, entrée par la gauche. Les cases entre les bandes voient deux passages : c'est là qu'Olek et Pomodoro montrent leurs auras.","enemies":"Slimes de la forêt","fallback":null,"den":false,"paths":[[[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[2,6],[2,7],[2,8],[2,9],[3,9],[4,9],[5,9],[6,9],[6,10],[6,11],[6,12]]],"hills":[],"hillReach":0,"hillDist":[],"hint":null,"length":24,"routes":[24],"turns":5,"plains":80,"best":9,"heat":[[3,4,5,5,5,4,3,1],[null,null,null,null,null,null,4,2],[3,4,5,7,7,null,5,3],[2,4,5,9,9,null,5,3],[1,3,4,7,7,null,5,3],[2,4,null,null,null,null,4,2],[3,5,null,7,7,4,3,1],[3,5,null,9,9,5,3,1],[3,5,null,7,7,5,4,3],[2,4,null,null,null,null,null,4],[1,3,4,5,7,7,null,5],[0,1,2,3,6,6,null,4],[0,0,0,0,2,3,null,3]],"old":{"path":[[0,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[1,4],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[5,8],[5,9]],"hills":[],"heat":[[null,5,6,5,5,4,3],[null,null,null,null,null,null,4],[7,9,10,11,9,null,5],[6,null,null,null,null,null,5],[5,null,9,11,10,8,6],[4,null,null,null,null,null,5],[3,4,5,7,7,null,5],[1,2,3,6,7,null,5],[0,0,0,3,4,null,4],[0,0,0,2,3,null,3]],"length":23,"turns":6,"best":11}},{"id":3,"name":"Le sentier des loups","shape":"Grand virage","intent":"La meute descend un bord et remonte l'autre, entrée et sortie sur le même bord. Trop large pour qu'un seul tireur couvre les deux jambes, sauf l'Oiseau posé au milieu. La colline domine le virage du bas.","enemies":"Loups gris, loup alpha","fallback":null,"den":false,"paths":[[[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[6,9],[6,8],[6,7],[6,6],[6,5],[6,4],[6,3],[6,2],[6,1],[6,0]]],"hills":[[3,8]],"hillReach":0,"hillDist":[2],"hint":null,"length":26,"routes":[26],"turns":2,"plains":77,"best":7,"heat":[[3,null,3,2,2,3,null,3],[4,null,4,3,3,4,null,4],[5,null,5,3,3,5,null,5],[5,null,5,3,3,5,null,5],[5,null,5,3,3,5,null,5],[5,null,5,3,3,5,null,5],[5,null,5,3,3,5,null,5],[5,null,5,3,3,5,null,5],[5,null,7,6,6,7,null,5],[5,null,7,7,7,7,null,5],[4,null,null,null,null,null,null,4],[3,4,5,5,5,5,4,3],[1,2,3,3,3,3,2,1]],"old":{"path":[[1,0],[1,1],[1,2],[2,2],[3,2],[4,2],[5,2],[5,3],[5,4],[4,4],[3,4],[2,4],[1,4],[1,5],[1,6],[2,6],[3,6],[4,6],[5,6],[5,7],[5,8],[5,9]],"hills":[[0,8]],"heat":[[3,null,5,5,3,2,1],[4,null,6,7,5,4,3],[5,null,null,null,null,null,4],[6,8,10,11,9,null,5],[5,null,null,null,null,null,5],[5,null,9,11,10,8,6],[4,null,null,null,null,null,5],[3,4,5,7,7,null,5],[1,2,3,6,6,null,4],[0,0,0,2,3,null,3]],"length":22,"turns":6,"best":11}},{"id":4,"name":"Le marais","shape":"La langue","intent":"Le chemin s'enfonce dans le marais et revient en longeant sa propre trace. La colonne entre les deux jambes voit les deux passages à une case : c'est la digue.","enemies":"Slimes du marais, loups aquatiques","fallback":null,"den":false,"paths":[[[0,1],[1,1],[2,1],[3,1],[3,2],[3,3],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,10],[3,11],[4,11],[5,11],[5,10],[5,9],[5,8],[5,7],[5,6],[5,5],[6,5],[7,5]]],"hills":[[7,8]],"hillReach":0,"hillDist":[2],"hint":null,"length":24,"routes":[24],"turns":4,"plains":79,"best":11,"heat":[[3,4,5,4,3,1,0,0],[null,null,null,null,4,2,0,0],[3,6,7,null,5,3,0,0],[2,6,7,null,6,5,3,2],[0,3,5,null,8,7,4,3],[0,3,5,null,9,null,null,null],[0,3,5,null,10,null,6,5],[0,3,5,null,10,null,7,5],[0,3,5,null,10,null,5,3],[0,3,5,null,11,null,5,3],[0,3,5,null,9,null,5,3],[0,2,4,null,null,null,4,2],[0,1,3,4,5,4,3,1]],"old":{"path":[[3,0],[3,1],[2,1],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[1,5],[1,6],[1,7],[2,7],[3,7],[4,7],[5,7],[5,8],[5,9]],"hills":[[6,1]],"heat":[[3,5,5,null,3,2,0],[4,null,null,null,6,4,1],[5,null,9,10,8,5,3],[5,null,null,null,null,null,4],[6,8,10,11,9,null,5],[5,null,null,null,null,null,5],[5,null,9,11,10,8,6],[4,null,null,null,null,null,5],[3,4,5,7,6,null,4],[1,2,3,5,5,null,3]],"length":24,"turns":8,"best":11}},{"id":5,"name":"Le bosquet","shape":"L'escalier","intent":"Une descente en marches jusqu'à la pointe, puis le retour. Chaque marche est un coin où bloquer, la pointe touche trois cases de chemin. Les tréants sont lents : l'escalier les garde longtemps à portée. La colline tient le cœur de la pointe.","enemies":"Tréants, slimes","fallback":null,"den":false,"paths":[[[0,0],[1,0],[2,0],[2,1],[2,2],[3,2],[4,2],[4,3],[4,4],[5,4],[6,4],[6,5],[6,6],[5,6],[4,6],[4,7],[4,8],[3,8],[2,8],[2,9],[2,10],[1,10],[0,10],[0,11],[0,12]]],"hills":[[3,5]],"hillReach":0,"hillDist":[1.41],"hint":null,"length":25,"routes":[25],"turns":11,"plains":78,"best":9,"heat":[[null,null,null,6,4,1,0,0],[5,6,null,7,6,3,1,0],[4,6,null,null,null,6,4,1],[1,3,6,7,null,7,6,3],[0,1,4,7,null,null,null,4],[0,0,2,6,9,9,null,5],[0,1,4,7,null,null,null,4],[1,3,6,7,null,7,6,3],[4,6,null,null,null,6,4,1],[6,7,null,7,6,3,1,0],[null,null,null,6,4,1,0,0],[null,6,6,3,1,0,0,0],[null,5,4,1,0,0,0,0]],"old":{"path":[[1,0],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[1,4],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[4,7],[3,7],[2,7],[1,7],[1,8],[1,9]],"hills":[[6,4]],"heat":[[3,null,5,6,5,4,3],[4,null,null,null,null,null,4],[6,8,10,11,9,null,5],[5,null,null,null,null,null,5],[5,null,9,11,10,8,6],[5,null,null,null,null,null,5],[6,8,10,11,9,null,5],[5,null,null,null,null,null,4],[4,null,6,7,5,4,3],[3,null,5,5,3,2,1]],"length":26,"turns":8,"best":11}},{"id":6,"name":"Le cercle des dryades","shape":"L'anneau","intent":"Les chimères font trois quarts de tour autour des deux collines. Au centre, un tireur voit deux côtés et l'Oiseau les quatre, mais c'est exactement là que tirent les dryades.","enemies":"Dryades, slimes soigneurs","fallback":null,"den":false,"paths":[[[3,0],[3,1],[3,2],[3,3],[3,4],[3,5],[4,5],[5,5],[6,5],[6,6],[6,7],[6,8],[6,9],[6,10],[5,10],[4,10],[3,10],[2,10],[1,10],[1,9],[1,8],[1,7],[1,6],[0,6]]],"hills":[[3,7],[4,7]],"hillReach":2.5,"hillDist":[2,2],"hint":null,"length":24,"routes":[24],"turns":5,"plains":78,"best":7,"heat":[[0,2,3,null,3,2,0,0],[0,3,4,null,4,3,0,0],[0,3,5,null,5,3,0,0],[0,3,5,null,7,6,2,1],[2,5,6,null,7,7,4,3],[3,5,7,null,null,null,null,4],[null,null,7,6,7,7,null,5],[5,null,6,5,6,7,null,5],[6,null,7,6,6,7,null,5],[5,null,7,7,7,7,null,5],[4,null,null,null,null,null,null,4],[3,4,5,5,5,5,4,3],[1,2,3,3,3,3,2,1]],"old":{"path":[[3,0],[3,1],[3,2],[2,2],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[5,4],[5,5],[5,6],[4,6],[3,6],[2,6],[1,6],[1,7],[1,8],[2,8],[3,8],[3,9]],"hills":[[5,1],[0,9]],"heat":[[1,4,5,null,3,2,0],[3,6,6,null,4,3,0],[4,null,null,null,7,4,1],[5,null,9,10,8,5,3],[5,null,null,null,null,null,4],[6,8,10,11,9,null,5],[5,null,null,null,null,null,4],[5,null,9,10,8,5,3],[4,null,null,null,6,4,1],[3,5,5,null,3,2,0]],"length":22,"turns":8,"best":11}},{"id":7,"name":"La meute","shape":"La fourche","intent":"La meute se sépare en deux branches et deux sorties, qui se rapprochent en bas. Bloquer avant la fourche arrête tout, mais un seul bloqueur prend alors la meute entière.","enemies":"La meute, loup-garou, tréants","fallback":"Sans le code de la fourche, le niveau se joue sur le tronc et la branche gauche seuls.","den":false,"paths":[[[1,0],[1,1],[1,2],[2,2],[3,2],[4,2],[4,3],[4,4],[3,4],[2,4],[1,4],[1,5],[1,6],[1,7],[1,8],[2,8],[3,8],[3,9],[3,10],[3,11],[3,12]],[[1,0],[1,1],[1,2],[2,2],[3,2],[4,2],[4,3],[5,3],[6,3],[6,4],[6,5],[6,6],[6,7],[6,8],[5,8],[5,9],[5,10],[5,11],[5,12]]],"hills":[[3,6],[4,6]],"hillReach":0,"hillDist":[2,2],"hint":null,"length":33,"routes":[21,19],"turns":6,"plains":69,"best":11,"heat":[[3,null,5,5,2,1,0,0],[4,null,6,7,5,5,3,1],[5,null,null,null,null,7,5,3],[6,8,11,10,null,null,null,4],[5,null,null,null,null,9,null,5],[5,null,7,7,8,9,null,5],[5,null,9,8,7,7,null,5],[5,null,7,7,8,7,null,5],[4,null,null,null,9,null,null,5],[3,6,7,null,10,null,6,5],[1,5,7,null,10,null,6,4],[0,3,4,null,8,null,4,3],[0,2,3,null,6,null,3,2]],"old":{"path":[[0,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[0,3],[0,4],[0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[4,7],[3,7],[2,7],[1,7],[0,7],[0,8],[0,9]],"hills":[[6,4],[3,9]],"heat":[[null,5,6,5,5,4,3],[null,null,null,null,null,null,4],[8,10,10,11,9,null,5],[null,null,null,null,null,null,5],[null,9,11,10,10,8,6],[null,null,null,null,null,null,5],[8,10,10,11,9,null,5],[null,null,null,null,null,null,4],[null,6,7,5,5,4,3],[null,5,5,3,3,2,1]],"length":30,"turns":8,"best":11}},{"id":8,"name":"La tanière","shape":"La spirale","intent":"Un tour et demi vers l'antre des ours, au centre. Tout l'intérieur voit deux ou trois passages : les meilleurs postes du jeu, face aux boss.","enemies":"Tout le bestiaire, les deux ours","fallback":null,"den":true,"paths":[[[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[1,10],[1,11],[2,11],[3,11],[4,11],[5,11],[6,11],[6,10],[6,9],[6,8],[6,7],[6,6],[6,5],[6,4],[6,3],[6,2],[6,1],[5,1],[4,1],[3,1],[3,2],[3,3],[3,4],[3,5],[3,6],[3,7]]],"hills":[[4,9],[7,0]],"hillReach":2.5,"hillDist":[2,1.41],"hint":null,"length":36,"routes":[36],"turns":4,"plains":66,"best":10,"heat":[[3,null,6,6,5,5,4,3],[4,null,8,null,null,null,null,4],[5,null,10,null,9,9,null,5],[5,null,10,null,10,10,null,5],[5,null,10,null,8,8,null,5],[5,null,10,null,8,8,null,5],[5,null,9,null,7,8,null,5],[5,null,8,null,6,7,null,5],[5,null,7,5,5,6,null,5],[5,null,8,7,7,7,null,5],[5,null,7,7,7,7,null,5],[4,null,null,null,null,null,null,4],[3,4,5,5,5,5,4,3]],"old":{"path":[[3,0],[2,0],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[2,8],[3,8],[4,8],[5,8],[5,7],[5,6],[5,5],[5,4],[5,3],[5,2],[4,2],[3,2],[3,3],[3,4],[3,5],[3,6]],"hills":[[0,9],[6,0]],"heat":[[4,null,null,null,5,3,1],[5,null,9,9,7,5,3],[5,null,11,null,null,null,4],[5,null,10,null,9,null,5],[5,null,10,null,11,null,5],[5,null,9,null,9,null,5],[5,null,10,null,10,null,5],[5,null,9,11,9,null,5],[4,null,null,null,null,null,4],[3,4,5,5,5,4,3]],"length":27,"turns":5,"best":11}}]}</script>
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById('traces-data').textContent)
+  const plates = document.getElementById('plates')
+  if (!data.levels) { plates.textContent = 'Données absentes : lancer node design/traces-8x13.mjs --html.'; return }
+
+  const NS = 'http://www.w3.org/2000/svg'
+  const svgEl = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag)
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v)
+    parent.appendChild(n)
+    return n
+  }
+  const key = (c) => c[0] + ',' + c[1]
+  const bin = (v) => (v >= 10 ? 4 : v >= 7 ? 3 : v >= 4 ? 2 : v >= 1 ? 1 : 0)
+  const coord = ([c, r]) => '[' + c + ', ' + r + ']'
+  const fmt = (n) => String(n).replace('.', ',')
+  const uniq = (cells) => [...new Map(cells.map((c) => [key(c), c])).values()]
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+
+  function drawBoard({ cols, rows, paths, hills, heat, hint }, small, label) {
+    const pad = small ? 0 : 0.8
+    const svg = document.createElementNS(NS, 'svg')
+    svg.setAttribute('viewBox', `${-pad} ${-pad} ${cols + pad + 0.06} ${rows + pad + 0.06}`)
+    svg.setAttribute('class', 'plan')
+    svg.setAttribute('role', 'img')
+    svg.setAttribute('aria-label', label)
+    const onPath = new Set(paths.flat().map(key))
+    const onHill = new Set(hills.map(key))
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (onPath.has(c + ',' + r)) continue
+        svgEl('rect', { x: c, y: r, width: 1, height: 1, class: 't-plain' }, svg)
+        const v = heat[r][c]
+        if (v > 0 && !onHill.has(c + ',' + r)) svgEl('rect', { x: c, y: r, width: 1, height: 1, class: 'h h' + bin(v) }, svg)
+      }
+    }
+    for (let c = 0; c <= cols; c++) svgEl('line', { x1: c, y1: 0, x2: c, y2: rows, class: 'grid' }, svg)
+    for (let r = 0; r <= rows; r++) svgEl('line', { x1: 0, y1: r, x2: cols, y2: r, class: 'grid' }, svg)
+    for (const cell of uniq(paths.flat())) svgEl('rect', { x: cell[0], y: cell[1], width: 1, height: 1, class: 't-path' }, svg)
+    for (const p of paths) svgEl('polyline', { points: p.map(([c, r]) => (c + 0.5) + ',' + (r + 0.5)).join(' '), class: 'route' }, svg)
+
+    // Sens de marche : une flèche toutes les trois cases.
+    if (!small) {
+      const drawn = new Set()
+      for (const p of paths) {
+        for (let i = 2; i < p.length - 2; i += 3) {
+          if (drawn.has(key(p[i]))) continue
+          drawn.add(key(p[i]))
+          const [c, r] = p[i]
+          const dx = p[i + 1][0] - c
+          const dy = p[i + 1][1] - r
+          const cx = c + 0.5
+          const cy = r + 0.5
+          const pts = [[cx + dx * 0.2, cy + dy * 0.2], [cx - dx * 0.12 - dy * 0.15, cy - dy * 0.12 + dx * 0.15], [cx - dx * 0.12 + dy * 0.15, cy - dy * 0.12 - dx * 0.15]]
+          svgEl('polygon', { points: pts.map((q) => q.join(',')).join(' '), class: 'dir' }, svg)
+        }
+      }
+    }
+
+    for (const [c, r] of hills) {
+      svgEl('rect', { x: c + 0.08, y: r + 0.16, width: 0.84, height: 0.78, rx: 0.2, class: 't-hill-shadow' }, svg)
+      svgEl('rect', { x: c + 0.08, y: r + 0.05, width: 0.84, height: 0.76, rx: 0.2, class: 't-hill' }, svg)
+    }
+
+    if (!small) {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const v = heat[r][c]
+          if (v >= 7 && !onHill.has(c + ',' + r)) {
+            const t = svgEl('text', { x: c + 0.5, y: r + 0.52, class: 'hn' }, svg)
+            t.textContent = v
+          }
+        }
+      }
+      for (let c = 0; c < cols; c++) { const t = svgEl('text', { x: c + 0.5, y: -0.36, class: 'tick', 'text-anchor': 'middle' }, svg); t.textContent = c }
+      for (let r = 0; r < rows; r++) { const t = svgEl('text', { x: -0.2, y: r + 0.5, class: 'tick', 'text-anchor': 'end' }, svg); t.textContent = r }
+    }
+
+    if (hint) svgEl('rect', { x: hint[0] + 0.08, y: hint[1] + 0.08, width: 0.84, height: 0.84, rx: 0.14, class: 'hint' }, svg)
+
+    if (paths.length > 1) {
+      let j = 0
+      while (j < paths[0].length && key(paths[0][j]) === key(paths[1][j])) j++
+      const f = paths[0][j - 1]
+      svgEl('circle', { cx: f[0] + 0.5, cy: f[1] + 0.5, r: small ? 0.2 : 0.17, class: 'fork' }, svg)
+    }
+
+    const s = paths[0][0]
+    const n = paths[0][1]
+    const dx = n[0] - s[0]
+    const dy = n[1] - s[1]
+    const cx = s[0] + 0.5
+    const cy = s[1] + 0.5
+    const e = small ? 0.3 : 0.26
+    svgEl('polygon', { points: [[cx + dx * e, cy + dy * e], [cx - dx * e * 0.8 - dy * e, cy - dy * e * 0.8 + dx * e], [cx - dx * e * 0.8 + dy * e, cy - dy * e * 0.8 - dx * e]].map((q) => q.join(',')).join(' '), class: 'entry' }, svg)
+
+    for (const x of uniq(paths.map((p) => p[p.length - 1]))) {
+      svgEl('circle', { cx: x[0] + 0.5, cy: x[1] + 0.5, r: 0.3, class: 'exit-halo' }, svg)
+      svgEl('circle', { cx: x[0] + 0.5, cy: x[1] + 0.5, r: 0.3, class: 'exit' }, svg)
+    }
+
+    svgEl('rect', { x: 0, y: 0, width: cols, height: rows, class: 'frame' }, svg)
+    return svg
+  }
+
+  for (const L of data.levels) {
+    const entry = L.paths[0][0]
+    const exits = uniq(L.paths.map((p) => p[p.length - 1]))
+    const notes = []
+    if (L.hint) notes.push('Case pointillée ' + coord(L.hint) + " : c'est là que le tutoriel demande de poser Buba.")
+    if (L.hillReach > 0 && L.hills.length) notes.push('Collines à ' + L.hillDist.map(fmt).join(' et ') + ' cases du chemin, à portée des dryades (' + fmt(L.hillReach) + ').')
+    if (L.den) notes.push("Sortie au centre du plateau : l'antre des ours.")
+    if (L.fallback) notes.push(L.fallback)
+    const len = L.routes.length > 1 ? L.length + '<small>branches ' + L.routes.join(' / ') + '</small>' : L.length
+
+    const art = document.createElement('article')
+    art.className = 'plate'
+    art.id = 'niveau-' + L.id
+    art.innerHTML = `
+      <header class="plate-head">
+        <p class="eyebrow">Niveau ${L.id}</p>
+        <h3>${esc(L.name)}</h3>
+        <span class="shape">${esc(L.shape)}</span>
+      </header>
+      <div class="plate-body">
+        <figure class="plan-main"></figure>
+        <div class="plate-text">
+          <p class="intent">${esc(L.intent)}</p>
+          <p class="meta">Entrée ${coord(entry)} · sortie${exits.length > 1 ? 's' : ''} ${exits.map(coord).join(' et ')}</p>
+          <p class="foes"><span>Chimères</span>${esc(L.enemies)}</p>
+          <table class="fig">
+            <thead><tr><th scope="col"><span class="sr">Mesure</span></th><th scope="col">8 × 13</th><th scope="col">Avant</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Longueur, en cases</th><td>${len}</td><td>${L.old.length}</td></tr>
+              <tr><th scope="row">Virages</th><td>${L.turns}</td><td>${L.old.turns}</td></tr>
+              <tr><th scope="row">Meilleur poste</th><td>${L.best}</td><td>${L.old.best}</td></tr>
+            </tbody>
+          </table>
+          ${notes.map((t) => '<p class="note">' + esc(t) + '</p>').join('')}
+          <figure class="old"><figcaption>Avant, en 7 × 10</figcaption></figure>
+        </div>
+      </div>`
+    const label = 'Plan 8 × 13 du niveau ' + L.id + ', ' + L.name + ' : chemin de ' + L.length + ' cases, entrée ' + coord(entry) + ', sortie ' + exits.map(coord).join(' et ') + '.'
+    art.querySelector('.plan-main').appendChild(drawBoard({ cols: data.cols, rows: data.rows, paths: L.paths, hills: L.hills, heat: L.heat, hint: L.hint }, false, label))
+    art.querySelector('.old').prepend(drawBoard({ cols: 7, rows: 10, paths: [L.old.path], hills: L.old.hills, heat: L.old.heat }, true, 'Ancien plan 7 × 10 du niveau ' + L.id + ' : chemin de ' + L.old.length + ' cases.'))
+    plates.appendChild(art)
+  }
+
+  const btn = document.getElementById('heat-toggle')
+  btn.addEventListener('click', () => {
+    const off = document.body.classList.toggle('heat-off')
+    btn.textContent = off ? 'Afficher la chaleur' : 'Masquer la chaleur'
+  })
+})()
+</script>

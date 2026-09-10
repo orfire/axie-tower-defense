@@ -62,7 +62,7 @@ Tower defense mobile portrait où le joueur défend un chemin avec ses Axies con
 | E | Défaite | **3 PV par niveau**, cumulés sur toutes les vagues. Étoiles selon les fuites |
 | F | Axies | **Classe + profil**. La classe fixe attaque, statut, aura. Le profil dérive des parts et ajuste les stats |
 | G | Collection v1 | **20 Axies de base du toolkit**, 6 disponibles au départ, 13 à débloquer aux étoiles, Dusk réservé |
-| H | Plateau | **7 × 10 sans zoom**, aimantation. **Mêlée sur le chemin = bloqueur**, distance en plaine. Pas de plafond de bloqueurs |
+| H | Plateau | **8 × 13 sans zoom** (révisé le 10/09, était 7 × 10), aimantation. **Mêlée sur le chemin = bloqueur**, distance en plaine. Pas de plafond de bloqueurs |
 | I | Colline | 1 ou 2 cases par niveau, distance uniquement, intouchable sauf par les dryades. Prix : **portée −1, aucune aura** |
 
 Rappel des décisions antérieures (`CLAUDE.md` §3) : triangle de classes ±15 %, auras d'adjacence, anti-empilement, chimères en ennemis, repositionnement gratuit, vagues déterministes, draft de 5, rendu 2D, pas de wallet.
@@ -98,8 +98,8 @@ Le jeu ne s'explique pas, il se découvre. Chaque niveau est construit pour qu'u
 
 ## 4. Plateau et règles spatiales
 
-- **Grille 7 colonnes × 10 lignes**, portrait, sans zoom. Une case = une unité de distance.
-- **Chemin fixe** par niveau, tracé sur des cases de la grille. Entrée en haut, sortie en bas. Longueur de 18 à 30 cases.
+- **Grille 8 colonnes × 13 lignes**, portrait, sans zoom. Une case = une unité de distance. Révisée le 10/09 : en 7 × 10, la largeur ne laissait qu'un tracé possible, le serpentin, et cinq niveaux sur huit étaient le même plan.
+- **Chemin fixe** par niveau, tracé sur des cases de la grille. Entrée en haut, sortie en bas. Longueur de 18 à 30 cases. **En révision le 10/09** : les tracés 8 × 13 (`design/traces-8x13.html`) proposent entrée et sortie sur n'importe quel bord et des segments verticaux plus longs, en attente de validation.
 - **Les chemins privilégient les segments horizontaux** : les sprites Spine sont vus de profil, ils marchent naturellement vers la gauche ou la droite et se retournent aux virages. Les segments verticaux restent courts, 1 à 3 cases. Un serpentin, pas une descente.
 - Trois types de cases pour les Axies. Une case = un Axie.
   - **Case de chemin** : réservée aux classes **mêlée** (Plante, Bête, Insecte). L'Axie y **bloque** : les chimères s'arrêtent devant lui et le frappent jusqu'à le mettre KO. Pas de plafond au nombre de bloqueurs, le budget suffit.
@@ -423,7 +423,7 @@ Les spawns sont listés explicitement, avec leur temps. Il n'y a **pas de seed**
 - **Portrait**, un seul doigt, **pas de zoom ni de pan**. Référence 390 × 780. Minimum 360 × 640.
 - **Sur desktop** (le cas probable du jury), le même cadre portrait est centré à la hauteur de la fenêtre, le fond du niveau remplit les côtés. Souris = doigt. Aucune mise en page paysage en v1.
 - **Le plateau est data-driven** : largeur et hauteur viennent du fichier de niveau. Passer en paysage en v2 est un changement de données et de mise en page, pas de simulation.
-- Taille de case = min(largeur ÷ 7, (hauteur − 208) ÷ 10). Soit 55 px en référence, 43 px au minimum. Le plateau est centré si un axe contraint.
+- Taille de case = min(largeur ÷ 8, (hauteur − 208) ÷ 13). Soit 44 px à la référence 390 × 780, 48 px sur un iPhone 14, 44 px sur un Android de 360 de large. **Risque accepté** : 35 px sur iPhone SE, où l'aimantation compense pour le glisser mais pas pour le tap sur une fiche. Le plateau est centré si un axe contraint.
 - **Aimantation** : pendant un glissement, l'Axie saute à la case valide la plus proche du doigt. Le doigt n'a pas besoin d'être précis.
 - Aucune saisie clavier. Aucun double-tap. Aucun geste multi-doigts.
 
@@ -436,7 +436,7 @@ Maquette visuelle : `design/maquette-ecran.html` (à ouvrir dans un navigateur).
 │ ♥♥♥   Vague 3/6   ⚡ 4/5   │  Barre haute, 48 px
 ├─────────────────────────────┤
 │                             │
-│         Plateau 7 × 10      │  385 × 550 en référence
+│         Plateau 8 × 13      │  352 × 572 en référence
 │                             │
 ├─────────────────────────────┤
 │ [Ax1][Ax2][Ax3][Ax4][Ax5]   │  Bac du draft, 96 px
@@ -653,7 +653,7 @@ Aujourd'hui : 03/09. 18 jours. Solo, avec assistance IA.
 | pixi-spine 4.0.3 ne lit pas un asset du toolkit | Faible | Vérifier le 05/09 sur Buba et un loup. Repli : mixer pour les Axies, sprites statiques pour les chimères |
 | Perf mobile avec 30 Spine animés | Moyenne | Plafond à 20 ennemis simultanés dans les vagues, atlas partagés |
 | Licence des SFX pour publication | À vérifier | Lire `LICENSE.md` le 04/09 |
-| Drag & drop imprécis sur petit écran | Moyenne | Case de 43 px minimum, aimantation à la case la plus proche, pas de zoom |
+| Drag & drop imprécis sur petit écran | Moyenne | Case de 44 px sur les téléphones courants (35 px sur iPhone SE, accepté), aimantation à la case la plus proche, pas de zoom |
 | Le puzzle est trop dur pour un jury pressé | Moyenne | 1 étoile suffit pour avancer. Onboarding niveaux 1 à 3 |
 | Le jury ne voit pas le lien Axie Core | Moyenne | Le README et l'écran de titre nomment l'angle traits + relations. Les fiches d'Axie montrent les parts et leur effet |
 | Licence Spine | Réglé | Vérifié le 03/09 : licence Spine Editor obligatoire pour tout runtime. Essential 69 USD, à acheter avant le 05/09 |
