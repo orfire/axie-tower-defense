@@ -14,7 +14,7 @@ body { font-family: Fredoka, ui-rounded, "Trebuchet MS", system-ui, sans-serif; 
 .hud-right { display: flex; align-items: center; gap: 10px; }
 .hud-mute { width: 28px; height: 28px; border: 0; border-radius: 8px; background: rgba(255,255,255,.12); color: #fff; font-size: 14px; }
 .hud-mute.is-muted { background: rgba(255,107,107,.4); }
-.leak-flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: rgba(255,60,60,0); transition: background .18s ease-out; }
+.leak-flash { position: absolute; inset: 0; z-index: 3; background: rgba(255,60,60,0); transition: background .18s ease-out; }
 .leak-flash.is-on { background: rgba(255,60,60,.35); transition: none; }
 .tray { bottom: 64px; height: 96px; justify-content: space-evenly; padding: 0 8px; background: #354a41; }
 .slot { position: relative; width: 60px; height: 78px; border: 0; border-radius: 14px; background: rgba(255,255,255,.08); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: inherit; }
@@ -59,6 +59,13 @@ body { font-family: Fredoka, ui-rounded, "Trebuchet MS", system-ui, sans-serif; 
 .game-ui { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .game-ui[hidden] { display: none !important; }
 .game-ui > * { pointer-events: auto; }
+/* Le voile de fuite couvre tout l'écran de jeu. Il doit rester transparent au
+   doigt, sinon il avale chaque geste : plus rien n'est cliquable, ni le bac ni
+   le plateau. Déclaré ICI et pas avec le reste de ses styles, parce que
+   `.game-ui > *` a la même spécificité et l'emporterait par l'ordre — c'est
+   exactement ce qui est arrivé sur la version déployée. Toute règle qui rend un
+   enfant de `.game-ui` transparent doit donc venir après cette ligne. */
+.game-ui > .leak-flash { pointer-events: none; }
 .quit { font-size: 18px; }
 
 /* --- Onboarding (tâche 18) ------------------------------------------------ */
