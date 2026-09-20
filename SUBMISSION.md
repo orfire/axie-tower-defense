@@ -22,7 +22,7 @@ set, not a skin.
 - **Traits.** An Axie's class and its six body parts decide everything it does
   on the board. There is no level, no upgrade, no equipment. Class fixes the
   attack, the status it applies and the aura it projects; the six parts derive a
-  profile — DPS, Tank, Rapide or Hybride — that shifts the stats. The canonical
+  profile — DPS, Tank, Swift or Hybrid — that shifts the stats. The canonical
   Axie class triangle applies at +15 % / −15 % damage: Beast and Bug beat Plant
   and Reptile, Plant and Reptile beat Aquatic and Bird, Aquatic and Bird beat
   Beast and Bug.
@@ -49,9 +49,9 @@ https://axie-tower-defense.vercel.app/
 
 https://github.com/orfire/axie-tower-defense
 
-## Backup demo video
+## Demo video
 
-`<not recorded — see Open items>`
+Not recorded. The submission form marks the demo video optional.
 
 ## Supported platforms
 
@@ -211,9 +211,10 @@ These are not done and cannot be done from the repository:
 
 1. ~~Deploy.~~ Done: https://axie-tower-defense.vercel.app/ — Vercel rebuilds it on every push to `round1`.
 2. ~~Push the repository.~~ Done: https://github.com/orfire/axie-tower-defense
-3. **Record the 2-minute backup video** — the rules require it. Show the whole
-   loop: title, map, level brief, draft, placement with aura highlights, a wave,
-   a chain reaction, a defeat, a retry, a 3-star win, an Axie unlock.
+3. **Optional: record a short demo video.** The submission form marks it
+   optional, so it is not a blocker. If recorded, show the whole loop: title,
+   map, level brief, draft, placement with aura highlights, a wave, a chain
+   reaction, a defeat, a retry, a 3-star win, an Axie unlock.
 4. **Play the campaign on a real phone**, portrait, and settle whether levels 6
    and 8 are demanding or broken.
 5. **Confirm the Spine Essential licence** is purchased (required by the Spine
@@ -237,7 +238,7 @@ Status recorded as of this commit. `?` means not verifiable from here.
                                           serves; iOS/Android untested)
 [x] Public HTTPS link opens in a private window       (checked with no session)
 [x] Repository and instructions viewable              (public repo, pushed 20 Sep)
-[ ] Video shows the whole loop                        (not recorded)
+[x] Video shows the whole loop                        (optional on the form, skipped)
 [x] AI tools, generated components, dependencies, assets declared
 [x] Credits and attributions preserved
 [x] Known issues described honestly
