@@ -125,6 +125,18 @@ Tout effet inventé doit correspondre à un atlas existant.
 
 ## 7. Où on en est / prochaine étape
 
+### Branches — à lire avant tout `git push`
+
+| Branche | Rôle |
+|---|---|
+| `round1` | **Ce qui est soumis au concours. Figée.** Branche de production Vercel : tout commit poussé dessus redéploie https://axie-tower-defense.vercel.app/ et **change le SHA** collé dans le formulaire. On n'y pousse plus avant la fin du round 1. |
+| `preprod` | Travail en cours. Vercel en fait un déploiement de prévisualisation avec sa propre URL. C'est ici que vont le passage en 8 × 13, le rééquilibrage et la fourche du niveau 7. |
+
+Le formulaire exige un SHA de 40 caractères et une case « ce commit exact a
+produit chaque build lié » : c'est la raison d'être du gel de `round1`.
+Fusionner `preprod` dans `round1` ne se fait qu'après la soumission.
+
+
 Le 03/09, les décisions structurantes ont été tranchées avec Edouard et le **GDD v1.0 est rédigé dans `design/GDD.md`**. Il remplace la matrice là où ils divergent.
 
 Décisions actées le 03/09 :
