@@ -6,7 +6,7 @@ Axies to bring and which ones you stand them next to.**
 Entry for the [Axie Vibeathon](https://vibeathon.axieinfinity.ai), Round 1.
 Solo entry by Edouard Blanchard.
 
-- Playable build: `<Vercel URL — not deployed yet>`
+- Playable build: https://axie-tower-defense.vercel.app/
 - Repository: https://github.com/orfire/axie-tower-defense
 - Submission dossier: **[`SUBMISSION.md`](SUBMISSION.md)** ← start here if you
   are judging this entry

@@ -43,7 +43,7 @@ Axies through the official AXP endpoint.
 
 ## Playable build
 
-`<Vercel HTTPS URL — not deployed yet, see Open items>`
+https://axie-tower-defense.vercel.app/
 
 ## Repository
 
@@ -209,9 +209,7 @@ edouard.blanchard@gmail.com
 
 These are not done and cannot be done from the repository:
 
-1. **Deploy.** `axie-td/vercel.json` is ready. Create the Vercel project with
-   **Root Directory = `axie-td`**, deploy, then paste the HTTPS URL above and
-   open it in a private window with no Vercel session.
+1. ~~Deploy.~~ Done: https://axie-tower-defense.vercel.app/ — Vercel rebuilds it on every push to `round1`.
 2. ~~Push the repository.~~ Done: https://github.com/orfire/axie-tower-defense
 3. **Record the 2-minute backup video** — the rules require it. Show the whole
    loop: title, map, level brief, draft, placement with aura highlights, a wave,
@@ -237,12 +235,12 @@ Status recorded as of this commit. `?` means not verifiable from here.
                                           controls page, status legend, fast retry)
 [?] Exported build works on each platform announced   (desktop build boots and
                                           serves; iOS/Android untested)
-[ ] Public HTTPS link opens in a private window       (not deployed yet)
+[x] Public HTTPS link opens in a private window       (checked with no session)
 [x] Repository and instructions viewable              (public repo, pushed 20 Sep)
 [ ] Video shows the whole loop                        (not recorded)
 [x] AI tools, generated components, dependencies, assets declared
 [x] Credits and attributions preserved
 [x] Known issues described honestly
-[ ] Submitted link points at the exact version tested (pending deploy)
+[x] Submitted link points at the exact version tested (Vercel builds round1)
 [ ] No feature added after the last clean-device test (pending)
 ```
