@@ -73,7 +73,7 @@ const balance = {
     plant:   { hp: 0.06 },
     reptile: { hp: 0.04, damage: 0.02 },
   },
-  profile_rules: { min_dominant: 0.15, tie_margin: 0.03, labels: { damage: 'DPS', rate: 'Rapide', hp: 'Tank', none: 'Hybride' } },
+  profile_rules: { min_dominant: 0.15, tie_margin: 0.03, labels: { damage: 'DPS', rate: 'Swift', hp: 'Tank', none: 'Hybrid' } },
   ko: { removed_until: 'end_of_wave', returns: 'full_hp_free' },
   enemy_rules: {
     melee_stops_only_for_blocker: true,
@@ -177,7 +177,7 @@ const wave = (budget, ...runs) => ({ budget, spawns: runs.flat().sort((a, b) => 
 
 const LEVELS = [
   {
-    id: 1, name: 'La clairière', biome: 'clairiere', hills: [],
+    id: 1, name: 'The Clearing', biome: 'clairiere', hills: [],
     path: [[3,0],[3,1],[2,1],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[2,6],[2,7],[2,8],[2,9]],
     draft: { forced: ['buba', 'momo', 'puffy'] },
     onboarding: true,
@@ -190,7 +190,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 2, name: 'La lisière', biome: 'foret', hills: [],
+    id: 2, name: 'The Forest Edge', biome: 'foret', hills: [],
     path: [[0,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[1,4],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[5,8],[5,9]],
     draft: { forced: ['olek', 'pomodoro', 'puffy', 'momo'] },
     onboarding: true,
@@ -203,7 +203,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 3, name: 'Le sentier des loups', biome: 'sentier', hills: [[0,8]],
+    id: 3, name: 'Wolf Trail', biome: 'sentier', hills: [[0,8]],
     path: [[1,0],[1,1],[1,2],[2,2],[3,2],[4,2],[5,2],[5,3],[5,4],[4,4],[3,4],[2,4],[1,4],[1,5],[1,6],[2,6],[3,6],[4,6],[5,6],[5,7],[5,8],[5,9]],
     draft: { forced: null },
     waves: [
@@ -216,7 +216,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 4, name: 'Le marais', biome: 'marais', hills: [[6,1]],
+    id: 4, name: 'The Marsh', biome: 'marais', hills: [[6,1]],
     path: [[3,0],[3,1],[2,1],[1,1],[1,2],[1,3],[2,3],[3,3],[4,3],[5,3],[5,4],[5,5],[4,5],[3,5],[2,5],[1,5],[1,6],[1,7],[2,7],[3,7],[4,7],[5,7],[5,8],[5,9]],
     draft: { forced: null },
     waves: [
@@ -229,7 +229,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 5, name: 'Le bosquet', biome: 'bosquet', hills: [[6,4]],
+    id: 5, name: 'The Grove', biome: 'bosquet', hills: [[6,4]],
     path: [[1,0],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[1,4],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[4,7],[3,7],[2,7],[1,7],[1,8],[1,9]],
     draft: { forced: null },
     waves: [
@@ -243,7 +243,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 6, name: 'Le cercle des dryades', biome: 'cercle', hills: [[5,1],[0,9]],
+    id: 6, name: 'Dryad Circle', biome: 'cercle', hills: [[5,1],[0,9]],
     path: [[3,0],[3,1],[3,2],[2,2],[1,2],[1,3],[1,4],[2,4],[3,4],[4,4],[5,4],[5,5],[5,6],[4,6],[3,6],[2,6],[1,6],[1,7],[1,8],[2,8],[3,8],[3,9]],
     draft: { forced: null },
     waves: [
@@ -257,7 +257,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 7, name: 'La meute', biome: 'meute', hills: [[6,4],[3,9]],
+    id: 7, name: 'The Pack', biome: 'meute', hills: [[6,4],[3,9]],
     path: [[0,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[5,2],[5,3],[4,3],[3,3],[2,3],[1,3],[0,3],[0,4],[0,5],[1,5],[2,5],[3,5],[4,5],[5,5],[5,6],[5,7],[4,7],[3,7],[2,7],[1,7],[0,7],[0,8],[0,9]],
     draft: { forced: null },
     waves: [
@@ -272,7 +272,7 @@ const LEVELS = [
     ],
   },
   {
-    id: 8, name: 'La tanière', biome: 'taniere', hills: [[0,9],[6,0]],
+    id: 8, name: 'The Den', biome: 'taniere', hills: [[0,9],[6,0]],
     // Exception GDD §10 : la sortie est la tanière, au centre du plateau. Le chemin repasse près de lui-même 3 fois.
     path: [[3,0],[2,0],[1,0],[1,1],[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[2,8],[3,8],[4,8],[5,8],[5,7],[5,6],[5,5],[5,4],[5,3],[5,2],[4,2],[3,2],[3,3],[3,4],[3,5],[3,6]],
     draft: { forced: null },

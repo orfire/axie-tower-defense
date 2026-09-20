@@ -133,7 +133,7 @@ function syncMuteBtn(): void {
   // L'étiquette dit l'action à venir, pas l'état : « Couper le son » figé sur un
   // bouton déjà coupé annonce l'inverse de ce qu'il fait. `aria-pressed` porte
   // l'état, l'étiquette porte l'effet du prochain appui.
-  hud.muteBtn.setAttribute('aria-label', sfx.muted ? 'Rétablir le son' : 'Couper le son')
+  hud.muteBtn.setAttribute('aria-label', sfx.muted ? 'Unmute' : 'Mute')
 }
 syncMuteBtn()
 hud.muteBtn.addEventListener('click', () => {
@@ -180,7 +180,7 @@ bar.className = 'bar'
 const launchBtn = document.createElement('button')
 launchBtn.type = 'button'
 launchBtn.className = 'launch'
-launchBtn.textContent = 'Lancer la vague'
+launchBtn.textContent = 'Start wave'
 const speedBtn = document.createElement('button')
 speedBtn.type = 'button'
 speedBtn.className = 'speed'
@@ -188,7 +188,7 @@ const quitBtn = document.createElement('button')
 quitBtn.type = 'button'
 quitBtn.className = 'speed quit'
 quitBtn.textContent = '☰'
-quitBtn.setAttribute('aria-label', 'Quitter le niveau et revenir à la carte')
+quitBtn.setAttribute('aria-label', 'Quit the level and go back to the map')
 bar.append(launchBtn, speedBtn, quitBtn)
 gameUi.append(bar)
 
@@ -228,7 +228,7 @@ function refreshChrome(): void {
   // l'information (règle d'accessibilité du concours).
   const placing = w.phase === 'placement'
   launchBtn.disabled = !placing
-  const label = placing ? 'Lancer la vague' : 'Vague en cours'
+  const label = placing ? 'Lancer la vague' : 'Wave running'
   if (launchBtn.textContent !== label) launchBtn.textContent = label
   drawOverlay(overlayGfx, w, game.layout, dragDrop.state)
   drawAuraZones(auraZonesGfx, w, game.layout)
@@ -458,7 +458,7 @@ function screenHtml(): string {
     case 'defeat': return defeatHtml(nav.levelId, nav.wave)
     case 'collection': return collectionHtml(session.save)
     case 'controls': return controlsHtml()
-    default: return '<div class="screen"><p class="hint">Chargement…</p></div>'
+    default: return '<div class="screen"><p class="hint">Loading…</p></div>'
   }
 }
 

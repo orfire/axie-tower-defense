@@ -67,7 +67,7 @@ devices.** See Known issues.
 
 ## Controls
 
-Shown in-game on the "Contrôles et appareils" page, reachable from the title
+Shown in-game on the "Controls & devices" page, reachable from the title
 screen.
 
 - Drag an Axie from the tray onto a tile to place it.
@@ -75,8 +75,8 @@ screen.
 - Drag a placed Axie anywhere else on the board — repositioning is free and
   unlimited.
 - Tap a placed Axie, or a chimera during a wave, to open its stat card.
-- Long-press in the tray to open a card without placing.
-- `Lancer la vague` starts the wave, `×2` doubles speed, `♪` mutes, `☰` returns
+- Tap an Axie in the tray to open its card without placing it.
+- `Start wave` starts the wave, `×2` doubles speed, `♪` mutes, `☰` returns
   to the map, `Esc` closes an open card.
 
 Melee classes (Plant, Beast, Bug) may be placed **on the path**, where they
@@ -126,7 +126,7 @@ Declared honestly; none of these is speculative.
    No performance profiling was done on mobile hardware.
 4. **Status pips are emoji glyphs.** They render correctly on Chrome/Windows.
    Rendering on iOS and Android was not checked; a missing glyph would degrade
-   to a box. The `Contrôles` page carries the full legend as a text fallback.
+   to a box. The `Controls` page carries the full legend as a text fallback.
 5. **Six starter Axies carry unvalidated working names** — Kestrel, Fennel,
    Marlin, Thistle, Bramble, Fang. They are placeholders, not official names.
 6. **Only three adventure music loops.** The kit ships three, so levels 1 to 7
@@ -228,7 +228,7 @@ Status recorded as of this commit. `?` means not verifiable from here.
 
 ```
 [x] A new player can start unaided       (levels 1-2 coach the first gestures)
-[x] Goal and controls visible in-game    (Contrôles page from the title screen)
+[x] Goal and controls visible in-game    (Controls page from the title screen)
 [x] Action, challenge, win, loss, retry  (all implemented and covered by tests)
 [x] Axie Core link explicit and visible  (auras drawn on the board, parts on cards)
 [?] Loading, UI, sound and feedback      (menus verified on the built app; the

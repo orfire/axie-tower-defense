@@ -23,7 +23,7 @@ describe('onboarding', () => {
 
   it('demande d’abord de poser un bloqueur sur le chemin', () => {
     const hints = hintsFor(1, 0)
-    expect(hints[0].text).toContain('chemin')
+    expect(hints[0].text).toContain('path')
     const w = createWorld(1)
     expect(hints[0].done(w)).toBe(false)
     place(w, 'olek', w.level.path[6])
@@ -32,12 +32,12 @@ describe('onboarding', () => {
 
   it('explique les auras à la première vague du niveau 2', () => {
     const hints = hintsFor(2, 0)
-    expect(hints[0].text.toLowerCase()).toContain('ralentiss')
+    expect(hints[0].text.toLowerCase()).toContain('slow')
   })
 
   it('n’explique qu’une seule réaction en chaîne', () => {
     const all = [1, 2, 3].flatMap((l) => [0, 1, 2].flatMap((wv) => hintsFor(l, wv)))
-    const chain = all.filter((h) => h.text.includes('deux fois'))
+    const chain = all.filter((h) => h.text.includes('twice as long'))
     expect(chain).toHaveLength(1)
   })
 })
@@ -49,14 +49,14 @@ describe('bulle affichée', () => {
 
     ob.update(w)
     expect(ob.el.hidden).toBe(false)
-    expect(ob.el.textContent).toContain('chemin')
+    expect(ob.el.textContent).toContain('path')
 
     // Buba est bien un bloqueur : mêlée, et son coût tient dans le budget de la
     // première vague. La case vient du chemin du niveau, jamais d'un choix à l'œil.
     place(w, 'buba', w.level.path[6])
     ob.update(w)
     expect(ob.el.hidden).toBe(false)
-    expect(ob.el.textContent).toContain('Lance la vague')
+    expect(ob.el.textContent).toContain('Start the wave')
 
     startWave(w)
     ob.update(w)
@@ -80,11 +80,11 @@ describe('bulle affichée', () => {
     ob.update(w)
     ob.dismiss('l1-block')
     ob.update(w)
-    expect(ob.el.textContent).toContain('Lance la vague')
+    expect(ob.el.textContent).toContain('Start the wave')
     ob.reset()
     expect(ob.el.hidden).toBe(true)
     ob.update(createWorld(1))
-    expect(ob.el.textContent).toContain('chemin')
+    expect(ob.el.textContent).toContain('path')
   })
 
   it('passe à la bulle de portée une fois la première vague jouée', () => {
@@ -92,7 +92,7 @@ describe('bulle affichée', () => {
     const w = createWorld(1)
     place(w, 'buba', w.level.path[6])
     ob.update(w)
-    expect(ob.el.textContent).toContain('Lance la vague')
+    expect(ob.el.textContent).toContain('Start the wave')
     runWave(w)
     expect(w.waveIndex).toBe(1)
     ob.update(w)
@@ -117,7 +117,7 @@ describe('bulle affichée', () => {
 
 describe('bulle de l’écran de draft', () => {
   it('n’existe qu’au niveau 3', () => {
-    expect(draftHint(3)?.text).toContain('chimères')
+    expect(draftHint(3)?.text).toContain('chimeras')
     expect(draftHint(1)).toBeNull()
     expect(draftHint(2)).toBeNull()
     expect(draftHint(4)).toBeNull()
@@ -128,7 +128,7 @@ describe('bulle de l’écran de draft', () => {
     session.save = emptySave()
     const el = document.createElement('div')
     el.innerHTML = draftHtml(session, 3, session.suggestedDraft(3))
-    expect(el.querySelector('.draft-hint')?.textContent).toContain('chimères')
+    expect(el.querySelector('.draft-hint')?.textContent).toContain('chimeras')
   })
 
   it('disparaît une fois le niveau 3 réussi', () => {

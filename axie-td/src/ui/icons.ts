@@ -21,19 +21,19 @@ export const STATUS_GLYPH: Record<StatusId, string> = {
   fragile: '💠',
 }
 
-export const STATUS_FR: Record<StatusId, string> = {
-  wet: 'Trempé', roots: 'Racines', feather: 'Marqué',
-  poison: 'Poison', bleed: 'Saignement', fragile: 'Fragile',
+export const STATUS_EN: Record<StatusId, string> = {
+  wet: 'Wet', roots: 'Rooted', feather: 'Marked',
+  poison: 'Poison', bleed: 'Bleed', fragile: 'Fragile',
 }
 
 /** Ce que le statut fait, en une ligne, pour la légende de la page des contrôles. */
-export const STATUS_EFFECT_FR: Record<StatusId, string> = {
-  wet: 'la chimère encaisse plus de dégâts',
-  roots: 'la chimère avance moins vite',
-  feather: 'les Axies visent cette chimère en priorité',
-  poison: 'dégâts continus, l’armure n’y fait rien',
-  bleed: 'dégâts continus, posés sur une cible empoisonnée',
-  fragile: 'l’armure de la chimère est réduite de moitié',
+export const STATUS_EFFECT_EN: Record<StatusId, string> = {
+  wet: 'the chimera takes more damage',
+  roots: 'the chimera moves slower',
+  feather: 'Axies target this chimera first',
+  poison: 'damage over time, armour does not stop it',
+  bleed: 'damage over time, applied to an already poisoned target',
+  fragile: 'the chimera armour is halved',
 }
 
 /**

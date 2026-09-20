@@ -67,7 +67,7 @@
         "damage": 0,
         "rate": 0.18
       },
-      "profile": "Hybride",
+      "profile": "Hybrid",
       "unlock": {
         "type": "start"
       },
@@ -91,7 +91,7 @@
         "damage": 0,
         "rate": 0.36
       },
-      "profile": "Rapide",
+      "profile": "Swift",
       "unlock": {
         "type": "start"
       },
@@ -115,7 +115,7 @@
         "damage": 0.18,
         "rate": 0.18
       },
-      "profile": "Hybride",
+      "profile": "Hybrid",
       "unlock": {
         "type": "start"
       },
@@ -288,7 +288,7 @@
         "damage": 0,
         "rate": 0.18
       },
-      "profile": "Hybride",
+      "profile": "Hybrid",
       "unlock": {
         "type": "stars",
         "stars": 9
@@ -363,7 +363,7 @@
         "damage": 0,
         "rate": 0.24
       },
-      "profile": "Rapide",
+      "profile": "Swift",
       "unlock": {
         "type": "stars",
         "stars": 14
@@ -413,7 +413,7 @@
         "damage": 0.12,
         "rate": 0.12
       },
-      "profile": "Hybride",
+      "profile": "Hybrid",
       "unlock": {
         "type": "stars",
         "stars": 17

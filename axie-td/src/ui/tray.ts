@@ -1,5 +1,5 @@
 import { BALANCE, axieDef } from '../data/load'
-import { CLASS_FR } from './cards'
+import { CLASS_EN } from './cards'
 import { spentEnergy } from '../sim/placement'
 import { currentBudget, type World } from '../sim/world'
 
@@ -46,11 +46,11 @@ export class Tray {
 
       // L'étiquette dit pourquoi le bouton est inactif : « indisponible » seul
       // ne renseigne pas, et la couleur ne doit jamais porter l'information.
-      const etat = posed ? ', déjà posé'
-        : tooExpensive ? `, trop cher, il reste ${left} d'énergie`
-        : w.phase !== 'placement' ? ', vague en cours'
+      const etat = posed ? ', already placed'
+        : tooExpensive ? `, too expensive, ${left} energy left`
+        : w.phase !== 'placement' ? ', wave running'
         : ''
-      const label = `${def.name}, ${CLASS_FR[cls]}, coût ${cost}${etat}`
+      const label = `${def.name}, ${CLASS_EN[cls]}, cost ${cost}${etat}`
       if (slot.getAttribute('aria-label') !== label) slot.setAttribute('aria-label', label)
     })
   }

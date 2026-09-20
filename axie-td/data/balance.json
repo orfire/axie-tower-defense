@@ -327,9 +327,9 @@
     "tie_margin": 0.03,
     "labels": {
       "damage": "DPS",
-      "rate": "Rapide",
+      "rate": "Swift",
       "hp": "Tank",
-      "none": "Hybride"
+      "none": "Hybrid"
     }
   },
   "ko": {

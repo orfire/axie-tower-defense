@@ -41,22 +41,22 @@ export type Hint = {
 const HINTS: Hint[] = [
   {
     id: 'l1-block', level: 1, wave: 0, anchor: { at: 'cell', pathIndex: 6 },
-    text: 'Glisse Buba sur le chemin. Il bloque les chimères.',
+    text: 'Drag Buba onto the path. He blocks chimeras.',
     done: (w) => w.axies.some((a) => a.pathIndex >= 0),
   },
   {
     id: 'l1-launch', level: 1, wave: 0, anchor: { at: 'launch' },
-    text: 'Lance la vague quand ta formation te convient.',
+    text: 'Start the wave when your formation looks right.',
     done: (w) => w.phase !== 'placement' || w.waveIndex > 0,
   },
   {
     id: 'l1-range', level: 1, wave: 1, anchor: { at: 'board' },
-    text: 'Momo tire loin. Place-le à côté du chemin, là où il voit le plus de cases.',
+    text: 'Momo shoots far. Put him beside the path, where he covers the most tiles.',
     done: (w) => w.axies.some((a) => a.cls === 'bird' && a.pathIndex < 0),
   },
   {
     id: 'l2-aura', level: 2, wave: 0, anchor: { at: 'board' },
-    text: 'Les cases voisines d’Olek ralentissent les chimères.',
+    text: 'Tiles next to Olek slow chimeras down.',
     done: (w) => w.axies.some((a) => a.cls === 'plant' && !a.ko),
   },
   {
@@ -65,12 +65,12 @@ const HINTS: Hint[] = [
     // ralentie par les Racines double la durée de son poison. « Dure deux fois
     // plus longtemps » décrit donc bien `dot_duration_mult`, pas l'aura Essaim,
     // qui elle accélère les ticks. C'est la seule réaction en chaîne expliquée.
-    text: 'Pomodoro à côté d’Olek : son poison dure deux fois plus longtemps.',
+    text: 'Pomodoro next to Olek: his poison lasts twice as long.',
     done: (w) => w.axies.some((a) => a.cls === 'bug' && auraSources(w, a).some((s) => s.cls === 'plant')),
   },
   {
     id: 'l3-read', level: 3, wave: 0, anchor: { at: 'draft' },
-    text: 'Regarde les chimères annoncées avant de choisir ton équipe.',
+    text: 'Check the chimeras ahead before you pick your team.',
     done: (w) => w.waveIndex > 0,
   },
 ]

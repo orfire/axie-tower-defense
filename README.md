@@ -26,7 +26,7 @@ Eight hand-made levels, 5 to 9 waves each, roughly 3–5 minutes per level.
 Fully deterministic: no randomness anywhere in the simulation, so a retry is
 byte-identical and only your layout is in question.
 
-Portrait, one finger, French UI.
+Portrait, one finger. The interface is in English; the design document and the code comments are in French.
 
 ## Running it
 

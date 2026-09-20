@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BALANCE } from '../src/data/load'
 import { axieCardHtml, enemyCardHtml } from '../src/ui/cards'
 import { controlsHtml } from '../src/ui/controls'
-import { CLASS_ICON, STATUS_FR, STATUS_GLYPH, injectIconStyles } from '../src/ui/icons'
+import { CLASS_ICON, STATUS_EN, STATUS_GLYPH, injectIconStyles } from '../src/ui/icons'
 import { kindAllowsLine } from '../src/sim/placement'
 import { emptySave } from '../src/save/storage'
 import { titleHtml } from '../src/ui/screens'
@@ -19,7 +19,7 @@ describe('accessibilité', () => {
   it('donne un glyphe et un nom français à chaque statut visible', () => {
     for (const id of ['wet', 'roots', 'feather', 'poison', 'bleed', 'fragile'] as const) {
       expect(STATUS_GLYPH[id], id).toBeTruthy()
-      expect(STATUS_FR[id], id).toBeTruthy()
+      expect(STATUS_EN[id], id).toBeTruthy()
     }
   })
 
@@ -31,7 +31,7 @@ describe('accessibilité', () => {
     expect(visible.length).toBeGreaterThan(0)
     for (const id of visible) {
       expect(STATUS_GLYPH[id as keyof typeof STATUS_GLYPH], id).toBeTruthy()
-      expect(STATUS_FR[id as keyof typeof STATUS_FR], id).toBeTruthy()
+      expect(STATUS_EN[id as keyof typeof STATUS_EN], id).toBeTruthy()
     }
   })
 
@@ -42,8 +42,8 @@ describe('accessibilité', () => {
 
   it('décrit les contrôles, les règles et les appareils', () => {
     const html = controlsHtml()
-    expect(html).toContain('Glisse')
-    expect(html).toContain('colline')
+    expect(html).toContain('Drag')
+    expect(html).toContain('hill')
     expect(html).toContain('portrait')
     expect(html).toContain('360')
   })
@@ -62,13 +62,13 @@ describe('accessibilité', () => {
     const texte = dom(controlsHtml()).textContent ?? ''
     for (const [id, glyphe] of Object.entries(STATUS_GLYPH)) {
       expect(texte, id).toContain(glyphe)
-      expect(texte, id).toContain(STATUS_FR[id as keyof typeof STATUS_FR])
+      expect(texte, id).toContain(STATUS_EN[id as keyof typeof STATUS_EN])
     }
   })
 
   it('étiquette les fiches sans dépendre de la couleur', () => {
-    expect(axieCardHtml('buba')).toContain('Bête')
-    expect(enemyCardHtml('wolf-alpha')).toContain('Meneur')
+    expect(axieCardHtml('buba')).toContain('Beast')
+    expect(enemyCardHtml('wolf-alpha')).toContain('Leader')
   })
 
   it('donne une icône à chacune des six classes', () => {

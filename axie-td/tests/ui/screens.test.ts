@@ -19,7 +19,7 @@ describe('écran de titre', () => {
     const el = dom(titleHtml(recordResult(emptySave(), 1, 2)))
     expect(el.querySelector('[data-go="map"]')).not.toBeNull()
     expect(el.querySelector('[data-go="collection"]')).not.toBeNull()
-    expect(el.textContent).toContain(`2 étoiles sur ${MAX_STARS}`)
+    expect(el.textContent).toContain(`2 stars of ${MAX_STARS}`)
   })
 })
 
@@ -43,8 +43,8 @@ describe('carte de campagne', () => {
   it('dit en toutes lettres ce qui est verrouillé, sans compter sur la couleur', () => {
     const el = dom(mapHtml(emptySave()))
     const boutons = [...el.querySelectorAll<HTMLButtonElement>('.level')]
-    expect(boutons[1].textContent).toContain('Verrouillé')
-    expect(boutons[1].getAttribute('aria-label')).toContain('verrouillé')
+    expect(boutons[1].textContent).toContain('Locked')
+    expect(boutons[1].getAttribute('aria-label')).toContain('locked')
   })
 })
 
@@ -95,8 +95,8 @@ describe('draft', () => {
 
   it('signale une équipe imposée', () => {
     const s = new Session()
-    expect(dom(draftHtml(s, 1, s.suggestedDraft(1))).textContent).toContain('imposée')
-    expect(dom(draftHtml(s, 3, s.suggestedDraft(3))).textContent).not.toContain('imposée')
+    expect(dom(draftHtml(s, 1, s.suggestedDraft(1))).textContent).toContain('Fixed team')
+    expect(dom(draftHtml(s, 3, s.suggestedDraft(3))).textContent).not.toContain('Fixed team')
   })
 })
 
@@ -112,7 +112,7 @@ describe('résultat', () => {
     const dernier = LEVELS.at(-1)!.id
     const el = dom(resultHtml(dernier, 2, emptySave(), null))
     expect(el.querySelector('[data-level]')).toBeNull()
-    expect(el.textContent).toContain('Campagne terminée')
+    expect(el.textContent).toContain('Campaign complete')
   })
 
   it('montre la fiche de l’Axie débloqué', () => {
@@ -124,7 +124,7 @@ describe('résultat', () => {
 describe('défaite', () => {
   it('dit à quelle vague les chimères sont passées et laisse changer le draft', () => {
     const el = dom(defeatHtml(3, 2))
-    expect(el.textContent).toContain(`vague 2 sur ${levelDef(3).waves.length}`)
+    expect(el.textContent).toContain(`wave 2 of ${levelDef(3).waves.length}`)
     expect(el.querySelector('[data-retry="3"]')).not.toBeNull()
     expect(el.querySelector('[data-draft="3"]')).not.toBeNull()
     expect(el.querySelector('[data-go="map"]')).not.toBeNull()

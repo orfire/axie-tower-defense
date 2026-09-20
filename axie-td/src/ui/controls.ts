@@ -1,6 +1,6 @@
 import type { StatusId } from '../data/types'
-import { CLASS_FR } from './cards'
-import { STATUS_EFFECT_FR, STATUS_FR, STATUS_GLYPH } from './icons'
+import { CLASS_EN } from './cards'
+import { STATUS_EFFECT_EN, STATUS_EN, STATUS_GLYPH } from './icons'
 
 /**
  * Page « contrôles et appareils supportés ».
@@ -13,44 +13,44 @@ import { STATUS_EFFECT_FR, STATUS_FR, STATUS_GLYPH } from './icons'
  */
 export function controlsHtml(): string {
   const statuts = (Object.keys(STATUS_GLYPH) as StatusId[])
-    .map((id) => `<li><b class="glyph">${STATUS_GLYPH[id]}</b> ${STATUS_FR[id]} — ${STATUS_EFFECT_FR[id]}.</li>`)
+    .map((id) => `<li><b class="glyph">${STATUS_GLYPH[id]}</b> ${STATUS_EN[id]} — ${STATUS_EFFECT_EN[id]}.</li>`)
     .join('')
 
   const classes = (['plant', 'beast', 'bug'] as const)
-    .map((c) => CLASS_FR[c]).join(', ')
+    .map((c) => CLASS_EN[c]).join(', ')
   const distance = (['aquatic', 'bird', 'reptile'] as const)
-    .map((c) => CLASS_FR[c]).join(', ')
+    .map((c) => CLASS_EN[c]).join(', ')
 
   return `<div class="screen screen-controls">
-    <header class="screen-top"><button type="button" class="ghost" data-go="title">Retour</button>
-      <span>Contrôles</span></header>
-    <h4>Au doigt ou à la souris</h4>
+    <header class="screen-top"><button type="button" class="ghost" data-go="title">Back</button>
+      <span>Controls</span></header>
+    <h4>Touch or mouse</h4>
     <ul class="traits">
-      <li>Glisse un Axie du bac vers une case pour le poser.</li>
-      <li>Glisse-le hors du plateau pour le retirer et récupérer son énergie.</li>
-      <li>Déplace un Axie posé autant que tu veux, c’est gratuit.</li>
-      <li>Touche un Axie posé, ou une chimère pendant la vague, pour ouvrir sa fiche.</li>
-      <li>Tape un Axie du bac : sa fiche s’ouvre sans le poser.</li>
-      <li>Le bouton ×2 accélère la vague, le bouton ♪ coupe le son, ☰ revient à la carte.</li>
-      <li>La touche Échap ferme une fiche ouverte.</li>
+      <li>Drag an Axie from the tray onto a tile to place it.</li>
+      <li>Drag it off the board to remove it and get its energy back.</li>
+      <li>Move a placed Axie as often as you like, it is free.</li>
+      <li>Tap a placed Axie, or a chimera during a wave, to open its card.</li>
+      <li>Tap an Axie in the tray: its card opens without placing it.</li>
+      <li>The ×2 button speeds the wave up, ♪ mutes the sound, ☰ goes back to the map.</li>
+      <li>The Esc key closes an open card.</li>
     </ul>
-    <h4>Règles</h4>
+    <h4>Rules</h4>
     <ul class="traits">
-      <li>Les classes de mêlée (${classes}) se posent sur le chemin et bloquent.</li>
-      <li>Les classes à distance (${distance}) se posent en plaine ou sur une colline.</li>
-      <li>Une colline est à l’abri, mais coûte une case de portée et coupe toutes les auras.</li>
-      <li>Chaque Axie donne une aura aux quatre cases voisines, jamais aux diagonales. Le badge posé sur le liseré dit de quelle classe elle vient.</li>
-      <li>Aucun Axie ne monte de niveau. La force vient de qui tu places et à côté de qui.</li>
-      <li>Trois chimères passées et le niveau est perdu. Zéro fuite vaut trois étoiles.</li>
-      <li>Les vagues sont identiques à chaque essai : après une défaite, seule ta disposition est à revoir.</li>
+      <li>Melee classes (${classes}) stand on the path and block.</li>
+      <li>Ranged classes (${distance}) stand on plains or on a hill.</li>
+      <li>A hill is safe, but costs one tile of range and cuts every aura.</li>
+      <li>Every Axie gives an aura to its four neighbouring tiles, never the diagonals. The badge on the link says which class it comes from.</li>
+      <li>No Axie ever levels up. Strength comes from who you place, and next to whom.</li>
+      <li>You start a level with three life points. A chimera that reaches the exit costs one, two or three of them depending on its tier, so a single boss leak ends the level. Zero leaks is three stars.</li>
+      <li>Waves are identical every try: after a defeat, only your layout is in question.</li>
     </ul>
-    <h4>Pastilles au-dessus des chimères</h4>
+    <h4>Pips above chimeras</h4>
     <ul class="traits glyphs">${statuts}</ul>
-    <h4>Appareils</h4>
+    <h4>Devices</h4>
     <ul class="traits">
-      <li>Navigateur mobile en portrait, à partir de 360 × 640. Cible : iOS 15 et Android 10.</li>
-      <li>Navigateur de bureau : le jeu s’affiche en cadre portrait centré, la souris remplace le doigt.</li>
-      <li>Un seul point de contact, pas de zoom, pas de rotation.</li>
+      <li>Mobile browser in portrait, from 360 × 640 up. Target: iOS 15 and Android 10.</li>
+      <li>Desktop browser: the game runs in a centred portrait frame, the mouse replaces the finger.</li>
+      <li>One touch point, no zoom, no rotation.</li>
     </ul>
   </div>`
 }
