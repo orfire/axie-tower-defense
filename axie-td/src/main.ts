@@ -200,7 +200,7 @@ function syncSpeedBtn(): void {
   // « fois deux, bouton », sans dire de quoi. L'étiquette nomme l'action.
   speedBtn.setAttribute(
     'aria-label',
-    session.speed2x ? 'Revenir à la vitesse normale' : 'Doubler la vitesse',
+    session.speed2x ? 'Back to normal speed' : 'Double the speed',
   )
 }
 syncSpeedBtn()
@@ -228,7 +228,7 @@ function refreshChrome(): void {
   // l'information (règle d'accessibilité du concours).
   const placing = w.phase === 'placement'
   launchBtn.disabled = !placing
-  const label = placing ? 'Lancer la vague' : 'Wave running'
+  const label = placing ? 'Start wave' : 'Wave running'
   if (launchBtn.textContent !== label) launchBtn.textContent = label
   drawOverlay(overlayGfx, w, game.layout, dragDrop.state)
   drawAuraZones(auraZonesGfx, w, game.layout)
