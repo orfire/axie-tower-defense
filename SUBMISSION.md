@@ -47,7 +47,7 @@ Axies through the official AXP endpoint.
 
 ## Repository
 
-`<GitHub URL — not pushed yet, see Open items>`
+https://github.com/orfire/axie-tower-defense
 
 ## Backup demo video
 
@@ -212,7 +212,7 @@ These are not done and cannot be done from the repository:
 1. **Deploy.** `axie-td/vercel.json` is ready. Create the Vercel project with
    **Root Directory = `axie-td`**, deploy, then paste the HTTPS URL above and
    open it in a private window with no Vercel session.
-2. **Push the repository** and paste its URL above.
+2. ~~Push the repository.~~ Done: https://github.com/orfire/axie-tower-defense
 3. **Record the 2-minute backup video** — the rules require it. Show the whole
    loop: title, map, level brief, draft, placement with aura highlights, a wave,
    a chain reaction, a defeat, a retry, a 3-star win, an Axie unlock.
@@ -238,7 +238,7 @@ Status recorded as of this commit. `?` means not verifiable from here.
 [?] Exported build works on each platform announced   (desktop build boots and
                                           serves; iOS/Android untested)
 [ ] Public HTTPS link opens in a private window       (not deployed yet)
-[ ] Repository and instructions viewable              (not pushed yet)
+[x] Repository and instructions viewable              (public repo, pushed 20 Sep)
 [ ] Video shows the whole loop                        (not recorded)
 [x] AI tools, generated components, dependencies, assets declared
 [x] Credits and attributions preserved

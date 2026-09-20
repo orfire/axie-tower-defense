@@ -7,6 +7,7 @@ Entry for the [Axie Vibeathon](https://vibeathon.axieinfinity.ai), Round 1.
 Solo entry by Edouard Blanchard.
 
 - Playable build: `<Vercel URL — not deployed yet>`
+- Repository: https://github.com/orfire/axie-tower-defense
 - Submission dossier: **[`SUBMISSION.md`](SUBMISSION.md)** ← start here if you
   are judging this entry
 - Assets and licences: [`ASSETS.md`](ASSETS.md)
