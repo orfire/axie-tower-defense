@@ -54,9 +54,9 @@ export type DragEvents = {
   onDrop: (state: DragState) => void
   onUpdate: (state: DragState) => void
   /**
-   * Tap sur un Axie déjà posé : appui et relâchement au même endroit, sans
-   * déplacement. C'est le seul geste disponible pour consulter une fiche
-   * pendant le placement, où l'appui sur un Axie démarre sinon un glissement.
+   * Tap : appui et relâchement au même endroit, sans déplacement. Ouvre la
+   * fiche de l'Axie, qu'il soit posé sur le plateau ou encore dans le bac.
+   * `uid` vaut -1 quand il vient du bac, où l'Axie n'existe pas encore.
    */
   onTap: (uid: number, axieId: string) => void
 }
@@ -97,6 +97,8 @@ export class DragDrop {
   startFromTray(axieId: string, px: number, py: number, e?: PointerEvent): void {
     if (this.state.kind !== 'none') return // un geste est déjà en cours
     this.claim(e)
+    this.startX = px
+    this.startY = py
     this.state = { kind: 'fromTray', axieId, px, py, cell: null }
     this.recompute()
   }
@@ -126,12 +128,9 @@ export class DragDrop {
   }
 
   /**
-   * Abandonne le geste en cours sans rien déposer.
-   *
-   * Un glissement démarre dès l'appui, avant même que le compte à rebours de
-   * l'appui long ne s'achève. Sans cet abandon, ouvrir une fiche laisserait une
-   * session de glissement ouverte derrière elle, et le relâchement déposerait
-   * l'Axie à la position figée du départ, fiche encore affichée.
+   * Abandonne le geste en cours sans rien déposer. Sans lui, ouvrir une fiche
+   * laisserait une session de glissement ouverte derrière elle, et le
+   * relâchement déposerait l'Axie à la position figée du départ.
    */
   abort(): void {
     if (this.state.kind === 'none') return
@@ -173,7 +172,11 @@ export class DragDrop {
     if (this.state.kind === 'none' || this.foreign(e)) return
     const st = this.state
     const still = Math.hypot(e.clientX - this.startX, e.clientY - this.startY) <= TAP_SLOP
-    if (st.kind === 'fromBoard' && still) this.ev.onTap(st.uid, st.axieId)
+    // Tap, sur le plateau comme dans le bac : on ouvre la fiche et on ne pose
+    // rien. Un tap dans le bac aimanterait sinon l'Axie sur la case valide la
+    // plus proche du doigt, donc au bas du plateau, sans que le joueur l'ait
+    // voulu.
+    if (still) this.ev.onTap(st.kind === 'fromBoard' ? st.uid : -1, st.axieId)
     else this.ev.onDrop(st)
     this.release()
     this.state = { kind: 'none' }

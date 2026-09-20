@@ -30,7 +30,7 @@ export function controlsHtml(): string {
       <li>Glisse-le hors du plateau pour le retirer et récupérer son énergie.</li>
       <li>Déplace un Axie posé autant que tu veux, c’est gratuit.</li>
       <li>Touche un Axie posé, ou une chimère pendant la vague, pour ouvrir sa fiche.</li>
-      <li>Appui long sur le bac : la fiche s’ouvre sans poser l’Axie.</li>
+      <li>Tape un Axie du bac : sa fiche s’ouvre sans le poser.</li>
       <li>Le bouton ×2 accélère la vague, le bouton ♪ coupe le son, ☰ revient à la carte.</li>
       <li>La touche Échap ferme une fiche ouverte.</li>
     </ul>

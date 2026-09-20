@@ -72,7 +72,7 @@ describe('tap sur un Axie posé', () => {
     })
     dd.attach(el)
     const p = unitToPx(layout, olek.cell[0] + 0.5, olek.cell[1] + 0.5)
-    return { w, olek, taps, drops, el, p }
+    return { w, olek, taps, drops, el, p, dd }
   }
 
   it('appui et relâchement au même endroit ouvrent la fiche, sans rien déposer', () => {
@@ -89,6 +89,26 @@ describe('tap sur un Axie posé', () => {
     el.dispatchEvent(pointer('pointerdown', p.x, p.y))
     window.dispatchEvent(pointer('pointermove', p.x + 40, p.y + 40))
     window.dispatchEvent(pointer('pointerup', p.x + 40, p.y + 40))
+    expect(taps).toHaveLength(0)
+    expect(drops).toHaveLength(1)
+  })
+
+  it('taper un Axie du bac ouvre sa fiche sans rien poser', () => {
+    const { taps, drops, dd } = harness()
+    // Le geste qui manquait : appuyer sur une carte du bac, marquer une pause,
+    // puis relâcher sans avoir bougé. Un minuteur d'appui long volait alors le
+    // glissement et le jeu devenait injouable sur la version déployée.
+    dd.startFromTray('momo', 40, 700, pointer('pointerdown', 40, 700))
+    window.dispatchEvent(pointer('pointerup', 41, 699))
+    expect(taps).toEqual([[-1, 'momo']])
+    expect(drops).toHaveLength(0)
+  })
+
+  it('glisser depuis le bac dépose toujours', () => {
+    const { taps, drops, dd } = harness()
+    dd.startFromTray('momo', 40, 700, pointer('pointerdown', 40, 700))
+    window.dispatchEvent(pointer('pointermove', 140, 400))
+    window.dispatchEvent(pointer('pointerup', 140, 400))
     expect(taps).toHaveLength(0)
     expect(drops).toHaveLength(1)
   })

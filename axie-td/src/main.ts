@@ -348,36 +348,10 @@ tray.onPick((axieId, px, py, e) => {
 
 // --- Fiches d'Axie et de chimère --------------------------------------------
 
-// Appui long sur le bac : 400 ms sans bouger ouvre la fiche au lieu de glisser.
-// Le minuteur est annulé au déplacement, pas seulement au relâchement, sinon
-// un glissement qui démarre lentement ouvre une fiche derrière le doigt et le
-// joueur se retrouve à glisser un Axie sous une fenêtre modale.
-// Le doigt qui a commencé est mémorisé, sinon deux appuis simultanés sur deux
-// emplacements s'annulent l'un l'autre et la fiche s'ouvre après le relâchement.
-let pressTimer: number | undefined
-let pressPointer = -1
-
-tray.el.addEventListener('pointerdown', (e) => {
-  if (pressPointer >= 0) return
-  const slot = (e.target as HTMLElement).closest<HTMLElement>('.slot')
-  const id = slot?.dataset.axieId
-  if (!id) return
-  pressPointer = e.pointerId
-  pressTimer = window.setTimeout(() => {
-    // Le glissement a déjà démarré à l'appui : on l'abandonne avant d'ouvrir.
-    dragDrop.abort()
-    cards.showAxie(id)
-    pressPointer = -1
-  }, 400)
-})
-
-for (const evt of ['pointerup', 'pointermove', 'pointercancel'] as const) {
-  tray.el.addEventListener(evt, (e) => {
-    if ((e as PointerEvent).pointerId !== pressPointer) return
-    window.clearTimeout(pressTimer)
-    pressPointer = -1
-  })
-}
+// Le bac et le plateau partagent le même geste : glisser pose, taper ouvre la
+// fiche. Une fiche ouverte par un minuteur d'appui long volait le glissement à
+// tout joueur qui marquait une pause avant de bouger — constaté sur la version
+// déployée, où poser Buba au niveau 1 devenait impossible.
 
 // Les Axies posés passent par `onTap` du glisser-déposer, dans les deux phases.
 // Il ne reste ici que les chimères, que le glissement ne connaît pas.
